@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Lab Manager - Vanderbilt University</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="/static/style.css" rel="stylesheet" type="text/css" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.js" type="text/javascript"></script>
+<script type="text/javascript" src="http://www.vanderbilt.edu/asset/vubrandbar.js" ></script>
+<script type="text/javascript"> 
+var timeout    = 500;
+var closetimer = 0;
+var ddmenuitem = 0;
+
+function jsddm_open()
+{  jsddm_canceltimer();
+   jsddm_close();
+   ddmenuitem = $(this).find('ul').css('visibility', 'visible');}
+
+function jsddm_close()
+{  if(ddmenuitem) ddmenuitem.css('visibility', 'hidden');}
+
+function jsddm_timer()
+{  closetimer = window.setTimeout(jsddm_close, timeout);}
+
+function jsddm_canceltimer()
+{  if(closetimer)
+   {  window.clearTimeout(closetimer);
+      closetimer = null;}}
+
+$(document).ready(function()
+{  $('#jsddm > li').bind('mouseover', jsddm_open)
+   $('#jsddm > li').bind('mouseout',  jsddm_timer)});
+
+document.onclick = jsddm_close;
+</script>
+</head>
+<body>
+<div id="central">
+	<div id="header">
+		<div class="sitename"><a href="#"></a></div>
+	</div>
+    <ul id="jsddm">
+      <li>
+		<a href="#">Home</a>
+	  </li>
+	  <li>
+		<a href="#">News</a>
+	  </li>
+	  <li>
+		<a href="#">Publications</a>
+		<ul>
+			<li><a href="#">2008</a></li>
+			<li><a href="#">2009</a></li>
+			<li><a href="#">2010</a></li>
+			<li><a href="#">2011</a></li>
+		</ul>
+	  </li>
+	  <li>
+		<a href="#">The Team</a>
+		<ul>
+			<li><a href="#">Staff</a></li>
+			<li><a href="#">Graduates</a></li>
+			<li><a href="#">Undergraduates</a></li>
+		</ul>
+	  </li>
+	  <li>
+		<a href="#">Research</a>
+		<ul>
+			<li><a href="#">Graduates</a></li>
+			<li><a href="#">Undergraduates</a></li>
+		</ul>
+	  </li>
+	  <li>
+		<a href="#">Contact</a>
+	  </li>
+	  <li>
+		<a href="#">Funding</a>
+	  </li>
+    </ul>
+<div id="content">
+		<div id="leftside">
+			{% if request.user.is_authenticated %}
+				<p>{{ first_name }}'s Menu:</p>
+				<p><a href="/">Home</a></p>
+				<p><a href="/logout/">Logout</a></p>
+				<br />
+				{% for o in actions %}
+				<p><a href="/action/{{ o.slug }}/">{{ o.name }}</a></p>
+				{% endfor %}
+			{% else %}
+				<p>Main Menu:</p>
+				<p><a href="/">Home</a></p>
+				<p><a href="/register/">Register</a></p>
+				<p><a href="/login/">Login</a></p>
+			{% endif %}
+		</div>
+		<div id="rightside">
+		{% block headerMessage %}
+		{% endblock %}
+			{% block content %}
+            
+        {% endblock %}
+		</div>
+		<div id="footer">
+		<p>Footer goes here!</p>		
+		</div>
+	</div>
+</div>
+</body>
+</html>

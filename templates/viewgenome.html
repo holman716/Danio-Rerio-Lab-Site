@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<p>Version : {{ version  }} </p>
+<p>Chromosome: {{ chromosome }} </p>
+<p>Position: {{ position }} </p>
+<p>Insert Name: {{ insert_name }} </p>
+<p>Allele Type: {{ allele_type }} </p>
+<ul>
+{% for product in products %}
+<li><a href="/action/viewproduct/{{ product.pk }}">{{ product.name }}</a></li>
+{% empty %}
+    <li>No Lines.</li>
+{% endfor %}
+</ul>
+
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1> {{ name }} </h1>
+<p>{{ qr_code }}</p>
+<p>Source: {% if line_id != "None" %}<a href="/action/viewline/{{ line_id.pk }}/">{{ line_id }} </a>{% else %} {{ line_id }} {% endif %}</p>
+<p>Container: {{ container }} </p>
+<p>Type: {{ type }} </p>
+<p>Active: {{ active }} </p>
+<p>Owner: {{ owner }} </p>
+{% endblock %}
+</ul>
