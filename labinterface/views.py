@@ -102,7 +102,7 @@ def editLine(request):
 
 def viewItemRedirect(request):
 	if not request.user.is_authenticated():
-		return HttpResponseRedirect('/login/?next=%s' % request.path)
+		return HttpResponseRedirect('/login/?next=')
 	else:
 		if request.method == 'GET':
 			selection = request.GET.get('barcode')
@@ -477,11 +477,11 @@ def splitLine(request, id):
 		dict['first_name'] = sm.first_name
 		dict['actions'] = get_user_allowed_actions(sm)
 		if request.method == 'POST':
-			selection = request.POST.get('selection')
-			if selection is None:
+			step = request.POST.get('step')
+			if step is None:
 				# A line is neccessary to split a line
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
-			else:
+			elif step is '1':
 				# bringing up the edit page
 				to_edit = Genome_version.objects.filter(pk=selection).get()
 				initial = {'pk': to_edit.pk,'name': to_edit.name}

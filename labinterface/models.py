@@ -195,6 +195,9 @@ class ProductType(models.Model):
 	id = models.AutoField(primary_key=True)
 	type = models.CharField(max_length=200)
 
+class Barcode(models.Model):
+	id = models.AutoField(primary_key=True)
+
 	class Meta:
 		pass
 	
