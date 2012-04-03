@@ -155,8 +155,8 @@ def addProductType(request):
 			form = AddProductTypeForm(request.POST)
 			if form.is_valid():
 				# process form data
-				name = form.cleaned_data['name']
-				new = ProductType(name=name)
+				type = form.cleaned_data['type']
+				new = ProductType(type=type)
 				new.save()
 				
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
@@ -181,16 +181,16 @@ def editProductType(request):
 				form = AddProductTypeForm(request.POST)
 				if form.is_valid():
 					# process form data
-					name = form.cleaned_data['name']
+					type = form.cleaned_data['type']
 					pk = form.cleaned_data['pk']
 					new = ProductType.objects.filter(pk=pk).get()
-					new.name = name
+					new.type = type
 					new.save()
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
 				to_edit = ProductType.objects.filter(pk=selection).get()
-				initial = {'name': to_edit.name, 'pk': to_edit.pk}
+				initial = {'type': to_edit.type, 'pk': to_edit.pk}
 				form = AddProductTypeForm(initial=initial)
 		else:
 			# choosing what object to edit
@@ -468,7 +468,24 @@ def addGenomeAssociation(request):
 		dict['action_slug'] = "addgenomeassociation"
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
 
-def splitLine(request, id):
+def splitLineInitial(request, id):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['definesHeader'] = True
+		dict['header'] = ""
+		initial = {'lineBarcode': str(id), 'step' : 'First'}
+		form = SplitLineInitialForm(initial = initial)
+		dict['form'] = form
+		dict['action_slug'] = "splitline"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+
+def splitLine(request):
 	if not request.user.is_authenticated():
 		return HttpResponseRedirect('/login/?next=%s' % request.path)
 	else:
@@ -478,20 +495,39 @@ def splitLine(request, id):
 		dict['actions'] = get_user_allowed_actions(sm)
 		if request.method == 'POST':
 			step = request.POST.get('step')
-			if step is None:
-				# A line is neccessary to split a line
-				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
-			elif step is '1':
-				# bringing up the edit page
-				to_edit = Genome_version.objects.filter(pk=selection).get()
-				initial = {'pk': to_edit.pk,'name': to_edit.name}
-				form = AddGenomeVersionForm(initial=initial)
-		else:
-			# choosing what object to edit
-			form = EnterBarcodeForm()
-		dict['form'] = form
-		dict['action_slug'] = "splitline"
-		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+			lineBarcode = request.POST.get('lineBarcode')
+			if step == 'First': #After initial set up is done this will run and direct to the right place
+				type = request.POST.get('split_Type')
+				if type == 'S': #User selected singles
+					initial = {'lineBarcode': lineBarcode, 'step' : 'Singles'}
+					form = SplitLineSinglesForm(initial = initial)
+				elif type == 'G': #User selected groups
+					initial = {'lineBarcode': lineBarcode, 'step' : 'Group', 'groupNum' : 1}
+					dict['definesHeader'] = True
+					dict['header'] = "Group split #" + str(1)
+					form = SplitLineGroupsForm(initial = initial)
+					dict['groupNum'] = 1
+			elif step == 'Singles': #Singles information complete
+				initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
+				form = SplitLineFinalForm(initial = initial)
+			elif step == 'Group': #Group information recieved
+				final = request.POST.get('final')
+				if final: #Last bit of group info recieved
+					initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
+					form = SplitLineFinalForm(initial = initial)
+				else: #More group information to come 
+					nextNum = str(int(request.POST.get('groupNum')) +1)
+					dict['groupNum'] = nextNum
+					dict['definesHeader'] = True
+					dict['header'] = "Group split #" + str(nextNum)
+					initial = {'lineBarcode': lineBarcode, 'step' : 'Group', 'groupNum' : nextNum}
+					form = SplitLineGroupsForm(initial = initial)
+			else: #Something went wrong here
+				initial = {'selection' : step}
+				form = EnterBarcodeForm(initial=initial)
+			dict['form'] = form
+			dict['action_slug'] = "splitline"
+			return render_to_response('form.html', dict, context_instance=RequestContext(request))
 
 ##############
 #####

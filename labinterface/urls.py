@@ -34,7 +34,8 @@ urlpatterns = patterns('',
 	url(r'^action/addgenomeversion/$', addGenomeVersion, name="addgenome"),
 	url(r'^action/editgenomeversion/$', editGenomeVersion, name="editgenome"),
 
-	url(r'^action/splitline/(?P<id>\w+)/$', splitLine, name="splitline"),
+	url(r'^action/splitline/(?P<id>\w+)/$', splitLineInitial, name="splitline"),
+	url(r'^action/splitline/$', splitLine, name="splitline"),
 	
 	
 	# Activation keys get matched by w+ instead of the more specific

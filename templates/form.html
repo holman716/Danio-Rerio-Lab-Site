@@ -2,6 +2,7 @@
 {% load i18n %}
 
 {% block content %}
+{% if definesHeader %}<p><b>{{header}}</b></p>{% endif %}
 <form action="/action/{{ action_slug }}/" method="post">
 {% csrf_token %}
     {% for field in form %}
@@ -10,10 +11,13 @@
 		{% else %}
 		<p>
             {{ field.errors }}
+			{% if field.help_text != '' %}
+			{{ field.help_text }}<br>
+			{% endif %}
             {{ field.label_tag }}: {{ field }}
         </p>
 		{% endif %}
     {% endfor %}
-    <p><input type="submit" value="Submit" /></p>
+    <p><input name="submit" type="submit" value="Submit" /></p>
 </form>
 {% endblock %}
