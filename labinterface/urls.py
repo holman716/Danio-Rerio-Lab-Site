@@ -31,8 +31,17 @@ urlpatterns = patterns('',
 
 	url(r'^action/addgenomeassociation/$', addGenomeAssociation, name="addgenomeassociation"),
 
-	url(r'^action/addgenomeversion/$', addGenomeVersion, name="addgenome"),
-	url(r'^action/editgenomeversion/$', editGenomeVersion, name="editgenome"),
+	url(r'^action/addgenomeversion/$', addGenomeVersion, name="addgenomeversion"),
+	url(r'^action/editgenomeversion/$', editGenomeVersion, name="editgenomeversion"),
+
+	url(r'^action/addcontainer/$', addContainerType, name="addcontainer"),
+	url(r'^action/editcontainer/$', editContainerType, name="editcontainer"),
+
+	url(r'^action/addalleletype/$', addAlleleType, name="addalleletype"),
+	url(r'^action/editalleletype/$', editAlleleType, name="editalleletype"),
+
+	url(r'^action/addinsertname/$', addInsertName, name="addinsertname"),
+	url(r'^action/editinsertname/$', editInsertName, name="editinsertname"),
 
 	url(r'^action/splitline/(?P<id>\w+)/$', splitLineInitial, name="splitline"),
 	url(r'^action/splitline/$', splitLine, name="splitline"),

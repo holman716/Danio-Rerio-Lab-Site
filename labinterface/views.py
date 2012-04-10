@@ -213,7 +213,10 @@ def addProduct(request):
 				# process form data
 				barcode = form.cleaned_data['barcode']
 				name = form.cleaned_data['name']
-				line = form.cleaned_data['line']
+				linecode = form.cleaned_data['line']
+				line2code = form.cleaned_data['line2']
+				line = Line.objects.filter(barcode__exact=linecode).get()
+				line2 = Line.objects.filter(barcode__exact=line2code).get()
 				type = form.cleaned_data['type']
 				container = form.cleaned_data['container']
 				active = form.cleaned_data['active']
@@ -222,8 +225,10 @@ def addProduct(request):
 				new = {}
 				if line == None:
 					new = Product(barcode=barcode, name=name, type=type, container=container, active=active, owner=owner)
-				else:
+				elif line2 == None:
 					new = Product(barcode=barcode, name=name, line_id=line, type=type, container=container, active=active, owner=owner)
+				else:
+					new = Product(barcode=barcode, name=name, line_id=line, line2_id=line2, type=type, container=container, active=active, owner=owner)
 				new.save()
 				
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
@@ -254,7 +259,10 @@ def editProduct(request):
 					type = form.cleaned_data['type']
 					container = form.cleaned_data['container']
 					active = form.cleaned_data['active']
-					line = form.cleaned_data['line']
+					linecode = form.cleaned_data['line']
+					line2code = form.cleaned_data['line2']
+					line = Line.objects.filter(barcode__exact=linecode).get()
+					line2 = Line.objects.filter(barcode__exact=line2code).get()
 					owner = form.cleaned_data['owner']
 					new = Product.objects.filter(pk=pk).get()
 					new.name = name
@@ -270,7 +278,9 @@ def editProduct(request):
 				to_edit = Product.objects.filter(barcode__exact=selection).get()
 				initial = {'name': to_edit.name, 'pk': to_edit.pk, 'barcode': to_edit.barcode, 'type': to_edit.type.pk, 'container': to_edit.container,'active': to_edit.active, 'owner':to_edit.owner}
 				if not to_edit.line_id == None:
-					initial['line'] = to_edit.line_id.pk
+					initial['line'] = to_edit.line_id.barcode
+				if not to_edit.line2_id == None:
+					initial['line2'] = to_edit.line2_id.barcode
 				form = AddProductForm(initial=initial)
 		else:
 			# choosing what object to edit
@@ -294,6 +304,10 @@ def viewProduct(request, id):
 			dict['line_id'] = "None"
 		else: 
 			dict['line_id'] = obj.line_id
+			if obj.line2_id == None:
+				dict['line2_id'] = "None"
+			else: 
+				dict['line2_id'] = obj.line2_id
 		dict['type'] = obj.type
 		dict['container'] = obj.container
 		dict['active'] = obj.active
@@ -443,6 +457,196 @@ def editGenomeVersion(request):
 		dict['action_slug'] = "editgenomeversion"
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
 
+def addContainerType(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			form = AddContainerTypeForm(request.POST)
+			if form.is_valid():
+				# process form data
+				type = form.cleaned_data['type']
+			
+				newcontainer = {}
+				newcontainer = Container_types(type=type)
+				newcontainer.save()
+				
+				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+		else:
+			form = AddContainerTypeForm()
+		dict['form'] = form
+		dict['action_slug'] = "addcontainer"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+		
+def editContainerType(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			selection = request.POST.get('selection')
+			if selection is None:
+				# submitting the modification
+				form = AddContainerTypeForm(request.POST)
+				if form.is_valid():
+					# process form data
+					pk = form.cleaned_data['pk']
+					new = Container_types.objects.filter(pk=pk).get()
+					
+					new.type = form.cleaned_data['type']
+					new.save()
+					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+			else:
+				# bringing up the edit page
+				to_edit = Container_types.objects.filter(pk=selection).get()
+				initial = {'pk': to_edit.pk,'type': to_edit.type}
+				form = AddContainerTypeForm(initial=initial)
+		else:
+			# choosing what object to edit
+			form = SelectContainerTypeForm()
+		dict['form'] = form
+		dict['action_slug'] = "editcontainer"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+def addAlleleType(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			form = AddAlleleTypeForm(request.POST)
+			if form.is_valid():
+				# process form data
+				type = form.cleaned_data['type']
+				if (type == 'insertion' or type == 'deletion'):
+					size = form.cleaned_data['size']
+				else:
+					size = 0
+				orientation = form.cleaned_data['orientation']
+			
+				newallalle = {}
+				newallalle = Allele_type(type=type, size=size, orientation=orientation)
+				newallalle.save()
+				
+				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+		else:
+			form = AddAlleleTypeForm()
+		dict['form'] = form
+		dict['action_slug'] = "addalleletype"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+		
+def editAlleleType(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			selection = request.POST.get('selection')
+			if selection is None:
+				# submitting the modification
+				form = AddAlleleTypeForm(request.POST)
+				if form.is_valid():
+					# process form data
+					pk = form.cleaned_data['pk']
+					new = Allele_type.objects.filter(pk=pk).get()
+					
+					new.type = form.cleaned_data['type']
+					if (new.type == 'insertion' or new.type == 'deletion'):
+						new.size = form.cleaned_data['size']
+					else:
+						new.size = 0
+					new.orientation = form.cleaned_data['orientation']
+					new.save()
+					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+			else:
+				# bringing up the edit page
+				to_edit = Allele_type.objects.filter(pk=selection).get()
+				initial = {'pk': to_edit.pk,'type': to_edit.type,'size': to_edit.size,'orientation': to_edit.orientation}
+				form = AddAlleleTypeForm(initial=initial)
+		else:
+			# choosing what object to edit
+			form = SelectAlleleTypeForm()
+		dict['form'] = form
+		dict['action_slug'] = "editalleletype"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+def addInsertName(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			form = AddInsertNameForm(request.POST)
+			if form.is_valid():
+				# process form data
+				name = form.cleaned_data['name']
+				creator = form.cleaned_data['creator']
+				ref_number = form.cleaned_data['ref_number']
+				sequence = form.cleaned_data['sequence']
+			
+				newname = {}
+				newname = Insert_name(name=name, creator=creator, ref_number=ref_number, sequence=sequence)
+				newname.save()
+				
+				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+		else:
+			form = AddInsertNameForm()
+		dict['form'] = form
+		dict['action_slug'] = "addinsertname"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+		
+def editInsertName(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			selection = request.POST.get('selection')
+			if selection is None:
+				# submitting the modification
+				form = AddInsertNameForm(request.POST)
+				if form.is_valid():
+					# process form data
+					pk = form.cleaned_data['pk']
+					new = Insert_name.objects.filter(pk=pk).get()
+					
+					new.name = form.cleaned_data['name']
+					new.creator = form.cleaned_data['creator']
+					new.ref_number = form.cleaned_data['ref_number']
+					new.sequence = form.cleaned_data['sequence']
+					new.save()
+					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+			else:
+				# bringing up the edit page
+				to_edit = Insert_name.objects.filter(pk=selection).get()
+				initial = {'pk': to_edit.pk,'name': to_edit.name,'creator': to_edit.creator,'ref_number': to_edit.ref_number,'sequence': to_edit.sequence}
+				form = AddInsertNameForm(initial=initial)
+		else:
+			# choosing what object to edit
+			form = SelectInsertNameForm()
+		dict['form'] = form
+		dict['action_slug'] = "editinsertname"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
 def addGenomeAssociation(request):
 	if not request.user.is_authenticated():
 		return HttpResponseRedirect('/login/?next=%s' % request.path)
@@ -496,32 +700,133 @@ def splitLine(request):
 		if request.method == 'POST':
 			step = request.POST.get('step')
 			lineBarcode = request.POST.get('lineBarcode')
+			product_Type_Number = request.POST.get('product_Type')
+			product_container_number = request.POST.get('product_container')
+			product_Type = ProductType.objects.filter(pk=product_Type_Number).get()
+			product_container = Container_types.objects.filter(pk=product_container_number).get()
 			if step == 'First': #After initial set up is done this will run and direct to the right place
 				type = request.POST.get('split_Type')
 				if type == 'S': #User selected singles
-					initial = {'lineBarcode': lineBarcode, 'step' : 'Singles'}
+					initial = {'lineBarcode': lineBarcode, 'product_Type': product_Type_Number, 'product_container': product_container_number, 'step' : 'Singles'}
 					form = SplitLineSinglesForm(initial = initial)
 				elif type == 'G': #User selected groups
-					initial = {'lineBarcode': lineBarcode, 'step' : 'Group', 'groupNum' : 1}
+					initial = {'lineBarcode': lineBarcode, 'product_Type': product_Type_Number, 'product_container': product_container_number, 'step' : 'Group', 'groupNum' : 1}
 					dict['definesHeader'] = True
 					dict['header'] = "Group split #" + str(1)
 					form = SplitLineGroupsForm(initial = initial)
 					dict['groupNum'] = 1
 			elif step == 'Singles': #Singles information complete
-				initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
-				form = SplitLineFinalForm(initial = initial)
-			elif step == 'Group': #Group information recieved
-				final = request.POST.get('final')
-				if final: #Last bit of group info recieved
+				try:
+					#check validity
+					initialBarcode = int(request.POST.get('first_Barcode'))
+					initialProductBarcode = int(request.POST.get('first_product_Barcode'))
+					totalBarcodes = int(request.POST.get('quantity'))
+					for x in range(initialBarcode,totalBarcodes+initialBarcode):
+						try:
+							barcodeFound = Barcode.objects.filter(pk=x).get()
+						except:
+							raise Exception, 'Not enough barcodes to facilitate split'
+						if (barcodeFound.used):
+							raise Exception, 'Not all barcodes are unused'
+					for x in range(initialProductBarcode,totalBarcodes+initialProductBarcode):
+						try:
+							barcodeFound = Barcode.objects.filter(pk=x).get()
+						except:
+							raise Exception, 'Not enough barcodes to facilitate split'
+						if (barcodeFound.used):
+							raise Exception, 'Not all barcodes are unused'
+					if ((initialBarcode <= initialProductBarcode and totalBarcodes+initialBarcode >= initialProductBarcode) 
+					or (initialProductBarcode <= initialBarcode and totalBarcodes+initialProductBarcode >= initialBarcode)):
+						raise Exception, 'Barcodes overlap'
+					#create splits
+					location = request.POST.get('location')
+					containerNumber = request.POST.get('container')
+					container = Container_types.objects.filter(pk=containerNumber).get()
+					active = request.POST.get('active')
+					old = Line.objects.filter(barcode__exact=lineBarcode).get()
+					for n in range(0,totalBarcodes-1):
+						x = initialBarcode + n
+						y = initialProductBarcode + n
+						#Create Line
+						newline = {}
+						if old.parent == None:
+							newline = Line(barcode=x ,name=old.name + ' : ' + str(x), IACUC_ID=old.IACUC_ID, raised=old.raised, original_quantity=1, current_quantity=1, container=container, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
+						else:
+							newline = Line(barcode=x ,name=old.name + ' : ' + str(x), IACUC_ID=old.IACUC_ID, raised=old.raised, parent=old.parent, original_quantity=1, current_quantity=1, container=container, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
+						newline.save()
+						#Create Product
+						modelNewLine = Line.objects.filter(barcode__exact=x).get()
+						newProduct = {}
+						newProduct = Product(barcode=y, line_id=modelNewLine, type=product_Type, container=product_container, active=active, owner=sm)
+						newProduct.save()
+					#raise Exception, 'Test was successful (or failure, depending on your view)'
 					initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
 					form = SplitLineFinalForm(initial = initial)
-				else: #More group information to come 
-					nextNum = str(int(request.POST.get('groupNum')) +1)
+				except Exception, ex:
+					initial = {'selection' : ex}
+					form = EnterBarcodeForm(initial=initial)
+					#initial = {'lineBarcode': lineBarcode, 'product_Type': product_Type, 'product_container': product_container, 'step' : 'Singles'}
+					#form = SplitLineSinglesForm(initial = initial)
+			elif step == 'Group': #Group information recieved
+				try:
+					#check validity
+					newLineBarcode = int(request.POST.get('newLineBarcode'))
+					productBarcode = int(request.POST.get('product_Barcode'))
+					try:
+						lineBarcodeFound = Barcode.objects.filter(pk=newLineBarcode).get()
+					except:
+						raise Exception, 'Not enough barcodes to facilitate split'
+					if (lineBarcodeFound.used):
+						raise Exception, 'Not all barcodes are unused'
+					try:
+						productBarcodeFound = Barcode.objects.filter(pk=productBarcode).get()
+					except:
+						raise Exception, 'Not enough barcodes to facilitate split'
+					if (productBarcodeFound.used):
+						raise Exception, 'Not all barcodes are unused'
+					if (initialBarcode == initialProductBarcode):
+						raise Exception, 'Barcodes overlap'
+					#create splits
+					location = request.POST.get('location')
+					lineContainer = request.POST.get('container')
+					active = request.POST.get('active')
+					old = Line.objects.filter(barcode__exact=lineBarcode).get()
+					#Create Line
+					newline = {}
+					if old.parent == None:
+						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, original_quantity=1, current_quantity=1, container=container, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
+					else:
+						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, parent=old.parent, original_quantity=1, current_quantity=1, container=container, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
+					newline.save()
+					#Create Product
+					newProduct = {}
+					newProduct = Product(barcode=productBarcode, line_id=newLineBarcode, type=product_Type, container=product_container, active=active, owner=sm)
+					newProduct.save()
+
+					final = request.POST.get('final')
+					if final: #Last bit of group info recieved
+						initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
+						form = SplitLineFinalForm(initial = initial)
+					else: #More group information to come 
+						nextNum = str(int(request.POST.get('groupNum')) +1)
+						dict['groupNum'] = nextNum
+						dict['definesHeader'] = True
+						dict['header'] = "Group split #" + str(nextNum)
+						initial = {'lineBarcode': lineBarcode, 'product_Type': product_Type_Number, 'product_container': product_container_number, 'step' : 'Group', 'groupNum' : nextNum}
+						form = SplitLineGroupsForm(initial = initial)
+				except Exception, ex:
+					nextNum = str(int(request.POST.get('groupNum')))
 					dict['groupNum'] = nextNum
 					dict['definesHeader'] = True
-					dict['header'] = "Group split #" + str(nextNum)
-					initial = {'lineBarcode': lineBarcode, 'step' : 'Group', 'groupNum' : nextNum}
+					dict['header'] = "Group split #" + str(nextNum) + " --" + str(ex) + "-- "
+					initial = {'lineBarcode': lineBarcode, 'product_Type': product_Type_Number, 'product_container': product_container_number, 'step' : 'Group', 'groupNum' : nextNum}
 					form = SplitLineGroupsForm(initial = initial)
+			elif step == 'Final': #Final info recieved
+				try:
+					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+				except:
+					initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
+					form = SplitLineFinalForm(initial = initial)
 			else: #Something went wrong here
 				initial = {'selection' : step}
 				form = EnterBarcodeForm(initial=initial)

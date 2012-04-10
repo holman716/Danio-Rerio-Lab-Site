@@ -5,7 +5,7 @@
 <h1> {{ name }} </h1>
 <p>{{ qr_code }}</p>
 <p>IACUC_ID: {{ iacuc_id }} </p>
-<p>Parent: {% if parent != "None" %}<a href="/action/viewline/{{ parent.pk }}/">{{ parent }} </a>{% else %} {{ parent }} {% endif %}</p>
+<p>Parent: {% if parent != "None" %}<a href="/action/viewline/{{ parent.barcode }}/">{{ parent }} </a>{% else %} {{ parent }} {% endif %}</p>
 <p>Raised: {{ raised }} </p>
 <p>Original Quantity: {{ original_quantity }} </p>
 <p>Current Quantity: {{ current_quantity }} </p>
@@ -13,26 +13,27 @@
 <p>Sex: {{ sex }} </p>
 <p>Active: {{ active }} </p>
 <p>Owner: {{ owner }} </p>
-<p>Products:</p>
+<br/><br/>
+<p><b>Products</b>:</p>
 <ul>
 {% for product in products %}
-<li><a href="/action/viewproduct/{{ product.pk }}">{{ product.name }}</a></li>
+<li><a href="/action/viewproduct/{{ product.barcode }}">{{ product.name }}</a></li>
 {% empty %}
     <li>No products.</li>
 {% endfor %}
 </ul>
-<br />
-<p>Children:</p>
+<br /><br/>
+<p><b>Children</b>:</p>
 <ul>
 {% for child in children %}
-<li><a href="/action/viewline/{{ child.pk }}">{{ child.name }}</a></li>
+<li><a href="/action/viewline/{{ child.barcode }}">{{ child.name }}</a></li>
 {% empty %}
     <li>No children.</li>
 {% endfor %}
 </ul>
 
-<br />
-<p>Actions:</p>
+<br /><br/>
+<p><b>Actions</b>:</p>
 <ul>
 <li><a href="/action/splitline/{{ id }}">Split Line</a></li>
 </ul>

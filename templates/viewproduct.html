@@ -4,7 +4,8 @@
 {% block content %}
 <h1> {{ name }} </h1>
 <p>{{ qr_code }}</p>
-<p>Source: {% if line_id != "None" %}<a href="/action/viewline/{{ line_id.pk }}/">{{ line_id }} </a>{% else %} {{ line_id }} {% endif %}</p>
+<p>Source: {% if line_id != "None" %}<a href="/action/viewline/{{ line_id.barcode }}/">{{ line_id }} </a>{% else %} {{ line_id }} {% endif %}</p>
+<p>Source2: {% if line2_id != "None" %}<a href="/action/viewline/{{ line2_id.barcode }}/">{{ line2_id }} </a>{% else %} {{ line2_id }} {% endif %}</p>
 <p>Container: {{ container }} </p>
 <p>Type: {{ type }} </p>
 <p>Active: {{ active }} </p>

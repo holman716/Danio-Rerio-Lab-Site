@@ -144,7 +144,8 @@ class Product(models.Model):
 	id = models.AutoField(primary_key=True)
 	barcode = models.IntegerField(db_index=True, unique=True)
 	name = models.CharField(max_length=200)
-	line_id = models.ForeignKey('Line', null=True, blank=True)
+	line_id = models.ForeignKey('Line', null=True, blank=True, related_name='Parent1')
+	line2_id = models.ForeignKey('Line', null=True, blank=True, related_name='Parent2')
 	type = models.ForeignKey('ProductType')
 	container = models.ForeignKey('Container_types', null=True, blank=True)
 	active = models.BooleanField()
@@ -186,6 +187,14 @@ class Insert_name(models.Model):
 
 class Allele_type(models.Model):
 	id = models.AutoField(primary_key=True)
+	TYPE_CHOICES = (
+		 ('insertion','insertion'),
+		 ('deletion','deletion'),
+		 ('?>A','?>A'),
+		 ('?>G','?>G'),
+		 ('?>T','?>T'),
+		 ('?>C','?>C'),
+	)
 	type = models.CharField(max_length=128)
 	size = models.IntegerField()
 	ORIENTATION_CHOICES = (
@@ -206,6 +215,7 @@ class ProductType(models.Model):
 
 class Barcode(models.Model):
 	id = models.AutoField(primary_key=True)
+	used = models.BooleanField()
 
 	class Meta:
 		pass
