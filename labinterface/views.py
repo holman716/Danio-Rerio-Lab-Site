@@ -7,6 +7,7 @@ from fish.labinterface.forms import *
 from django.views.decorators.csrf import csrf_exempt
 from django.template import RequestContext
 from django import template
+from django.db.models import Max
 
 import urllib
 from django.template.defaultfilters import stringfilter
@@ -80,6 +81,7 @@ def editLine(request):
 					new.current_quantity = form.cleaned_data['current_quantity']
 					new.original_quantity = form.cleaned_data['original_quantity']
 					new.container = form.cleaned_data['container']
+					new.location = form.cleaned_data['location']
 					new.sex = form.cleaned_data['sex']
 					new.active = form.cleaned_data['active']
 					new.strain = form.cleaned_data['strain']
@@ -700,10 +702,11 @@ def splitLine(request):
 		if request.method == 'POST':
 			step = request.POST.get('step')
 			lineBarcode = request.POST.get('lineBarcode')
-			product_Type_Number = request.POST.get('product_Type')
-			product_container_number = request.POST.get('product_container')
-			product_Type = ProductType.objects.filter(pk=product_Type_Number).get()
-			product_container = Container_types.objects.filter(pk=product_container_number).get()
+			if step <> 'Final':
+				product_Type_Number = request.POST.get('product_Type')
+				product_container_number = request.POST.get('product_container')
+				product_Type = ProductType.objects.filter(pk=product_Type_Number).get()
+				product_container = Container_types.objects.filter(pk=product_container_number).get()
 			if step == 'First': #After initial set up is done this will run and direct to the right place
 				type = request.POST.get('split_Type')
 				if type == 'S': #User selected singles
@@ -735,16 +738,16 @@ def splitLine(request):
 							raise Exception, 'Not enough barcodes to facilitate split'
 						if (barcodeFound.used):
 							raise Exception, 'Not all barcodes are unused'
-					if ((initialBarcode <= initialProductBarcode and totalBarcodes+initialBarcode >= initialProductBarcode) 
-					or (initialProductBarcode <= initialBarcode and totalBarcodes+initialProductBarcode >= initialBarcode)):
+					if ((initialBarcode <= initialProductBarcode and totalBarcodes+initialBarcode > initialProductBarcode) 
+					or (initialProductBarcode <= initialBarcode and totalBarcodes+initialProductBarcode > initialBarcode)):
 						raise Exception, 'Barcodes overlap'
 					#create splits
 					location = request.POST.get('location')
 					containerNumber = request.POST.get('container')
 					container = Container_types.objects.filter(pk=containerNumber).get()
-					active = request.POST.get('active')
+					active = request.POST.get('active') == 'on'
 					old = Line.objects.filter(barcode__exact=lineBarcode).get()
-					for n in range(0,totalBarcodes-1):
+					for n in range(0,totalBarcodes):
 						x = initialBarcode + n
 						y = initialProductBarcode + n
 						#Create Line
@@ -759,6 +762,14 @@ def splitLine(request):
 						newProduct = {}
 						newProduct = Product(barcode=y, line_id=modelNewLine, type=product_Type, container=product_container, active=active, owner=sm)
 						newProduct.save()
+
+						barcodeObject = Barcode.objects.filter(pk=x).get()
+						productBarcodeObject = Barcode.objects.filter(pk=y).get()
+						barcodeObject.used = True
+						barcodeObject.used = True
+						productBarcodeObject.used = True
+						barcodeObject.save()
+						productBarcodeObject.save()
 					#raise Exception, 'Test was successful (or failure, depending on your view)'
 					initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
 					form = SplitLineFinalForm(initial = initial)
@@ -784,24 +795,35 @@ def splitLine(request):
 						raise Exception, 'Not enough barcodes to facilitate split'
 					if (productBarcodeFound.used):
 						raise Exception, 'Not all barcodes are unused'
-					if (initialBarcode == initialProductBarcode):
+					if (newLineBarcode == productBarcode):
 						raise Exception, 'Barcodes overlap'
 					#create splits
 					location = request.POST.get('location')
-					lineContainer = request.POST.get('container')
-					active = request.POST.get('active')
+					lineContainernumber = request.POST.get('container')
+					lineContainer = Container_types.objects.filter(pk=lineContainernumber).get()
+					active = request.POST.get('active') == 'on'
 					old = Line.objects.filter(barcode__exact=lineBarcode).get()
 					#Create Line
 					newline = {}
 					if old.parent == None:
-						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, original_quantity=1, current_quantity=1, container=container, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
+						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, original_quantity=1, current_quantity=1, container=lineContainer, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
 					else:
-						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, parent=old.parent, original_quantity=1, current_quantity=1, container=container, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
+						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, parent=old.parent, original_quantity=1, current_quantity=1, container=lineContainer, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
 					newline.save()
 					#Create Product
+					modelNewLine = Line.objects.filter(barcode__exact=newLineBarcode).get()
 					newProduct = {}
-					newProduct = Product(barcode=productBarcode, line_id=newLineBarcode, type=product_Type, container=product_container, active=active, owner=sm)
+					newProduct = Product(barcode=productBarcode, line_id=modelNewLine, type=product_Type, container=product_container, active=active, owner=sm)
 					newProduct.save()
+
+					#Indicate barcodes used
+					barcodeObject = Barcode.objects.filter(pk=newLineBarcode).get()
+					productBarcodeObject = Barcode.objects.filter(pk=productBarcode).get()
+					barcodeObject.used = True
+					barcodeObject.used = True
+					productBarcodeObject.used = True
+					barcodeObject.save()
+					productBarcodeObject.save()
 
 					final = request.POST.get('final')
 					if final: #Last bit of group info recieved
@@ -823,6 +845,17 @@ def splitLine(request):
 					form = SplitLineGroupsForm(initial = initial)
 			elif step == 'Final': #Final info recieved
 				try:
+					newQuantity = int(request.POST.get('current_quantity'))
+					newLocation = request.POST.get('location')
+					newContainerNumber = request.POST.get('container')
+					newContainer = Container_types.objects.filter(pk=newContainerNumber).get()
+					active = request.POST.get('active') == 'on'
+					oldLine = Line.objects.filter(barcode__exact=lineBarcode).get()
+					oldLine.current_quantity = newQuantity
+					oldLine.container = newContainer
+					oldLine.location = newLocation
+					oldLine.active = active
+					oldLine.save()
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 				except:
 					initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
@@ -833,6 +866,74 @@ def splitLine(request):
 			dict['form'] = form
 			dict['action_slug'] = "splitline"
 			return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+def addBarcodes(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			quantity = int(request.POST.get('quantity'))
+			lastUsed = int(Barcode.objects.all().aggregate(Max('id'))['id__max'])
+			for x in range(1,quantity+1):
+				newBarcode = {}
+				newBarcode = Barcode(id=lastUsed+x, used=False)
+				newBarcode.save()
+			dict['definesHeader'] = True
+			dict['header'] = "Created " + str(quantity) + " barcodes starting at " + str(lastUsed+1) + " and ending at " + str(lastUsed+quantity)
+			return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+		else:
+			# choosing what object to edit
+			form = PrintBarcodeForm()
+			dict['form'] = form
+			dict['action_slug'] = "addbarcodes"
+			return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+def addMating(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			# process form data
+			typeM = request.POST.get('typeM')
+			barcodeMale = request.POST.get('barcodeMale')
+			if (typeM == 'Line'):
+				line = Line.objects.filter(barcode__exact=barcodeMale).get()
+			else:
+				line = Product.objects.filter(barcode__exact=barcodeMale).get().line_id
+			typeF = request.POST.get('typeF')
+			barcodeFemale = request.POST.get('barcodeFemale')
+			if (barcodeFemale == ''):
+				line2 = None
+			elif (typef == 'Line'):
+				line2 = Line.objects.filter(barcode__exact=barcodeFemale).get()
+			else:
+				line2 = Product.objects.filter(barcode__exact=barcodeFemale).get().line_id
+			quantity = request.POST.get('quantity')
+			firstBarcode = request.POST.get('firstBarcode')
+			#Get type info
+			#get container info
+			
+			new = {}
+			if line == None:
+				new = Product(barcode=firstBarcode, type=type, container=container, active=False, owner=sm)
+			elif line2 == None:
+				new = Product(barcode=firstBarcode, line_id=line, type=type, container=container, active=False, owner=sm)
+			else:
+				new = Product(barcode=firstBarcode, line_id=line, line2_id=line2, type=type, container=container, active=False, owner=sm)
+			new.save()
+				
+			return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+		else:
+			dict['action_slug'] = "addmating"
+			return render_to_response('matingform.html', dict, context_instance=RequestContext(request))
 
 ##############
 #####

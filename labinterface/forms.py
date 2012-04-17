@@ -24,6 +24,9 @@ class AddLineForm(forms.Form):
 class EnterBarcodeForm(forms.Form):
 	selection = forms.IntegerField()
 
+class PrintBarcodeForm(forms.Form):
+	quantity = forms.IntegerField(help_text="How many barcodes will be printed?")
+
 class AddProductTypeForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
 	type = forms.CharField()

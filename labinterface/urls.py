@@ -43,6 +43,10 @@ urlpatterns = patterns('',
 	url(r'^action/addinsertname/$', addInsertName, name="addinsertname"),
 	url(r'^action/editinsertname/$', editInsertName, name="editinsertname"),
 
+	url(r'^action/addbarcodes/$', addBarcodes, name="addbarcodes"),
+
+	url(r'^action/addmating/$', addMating, name="addbarcodes"),
+
 	url(r'^action/splitline/(?P<id>\w+)/$', splitLineInitial, name="splitline"),
 	url(r'^action/splitline/$', splitLine, name="splitline"),
 	

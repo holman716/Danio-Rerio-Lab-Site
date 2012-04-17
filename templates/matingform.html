@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+{% if definesHeader %}<p><b>{{header}}</b></p>{% endif %}
+<form action="/action/{{ action_slug }}/" method="post">
+{% csrf_token %}
+	<p>Scan male line or product barcode.
+	<br><select name="typeM">
+		<option value="Line">Line</option>
+		<option value="Product">Product</option>
+	</select> 
+	<input type="text" name="barcodeMale" /></p>
+	<p>Scan female line or product barcode. (leave blank if doing an in-cross)
+	<br><select name="typeF">
+		<option value="Line">Line</option>
+		<option value="Product">Product</option>
+	</select>
+	<input type="text" name="barcodeFemale" /></p>
+	<p>How many products are expected?
+	<br><input type="text" name="quantity" /></p>
+	<p>What is the first barcode?
+	<br><input type="text" name="firstBarcode" /></p>
+    <p><input name="submit" type="submit" value="Submit" /></p>
+</form>
+{% endblock %}
