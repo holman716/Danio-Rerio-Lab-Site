@@ -5,6 +5,11 @@
 {% if definesHeader %}<p><b>{{header}}</b></p>{% endif %}
 <form action="/action/{{ action_slug }}/" method="post">
 {% csrf_token %}
+	<p>What type of mating will this be?
+	<br><select name="matingType">
+		<option value="in">In-Cross</option>
+		<option value="out">Out-Cross</option>
+	</select><br>
 	<p>Scan male line or product barcode.
 	<br><select name="typeM">
 		<option value="Line">Line</option>
@@ -17,10 +22,19 @@
 		<option value="Product">Product</option>
 	</select>
 	<input type="text" name="barcodeFemale" /></p>
-	<p>How many products are expected?
-	<br><input type="text" name="quantity" /></p>
-	<p>What is the first barcode?
-	<br><input type="text" name="firstBarcode" /></p>
+	{% for field in form %}
+		{% if field.is_hidden %}
+			{{ field }}
+		{% else %}
+		<p>
+            {{ field.errors }}
+			{% if field.help_text != '' %}
+			{{ field.help_text }}<br>
+			{% endif %}
+            {{ field.label_tag }}: {{ field }}
+        </p>
+		{% endif %}
+    {% endfor %}
     <p><input name="submit" type="submit" value="Submit" /></p>
 </form>
 {% endblock %}

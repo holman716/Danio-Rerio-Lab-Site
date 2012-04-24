@@ -14,6 +14,9 @@ from django.template.defaultfilters import stringfilter
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 
+from datetime import date
+from datetime import timedelta
+
 def addLine(request):
 	if not request.user.is_authenticated():
 		return HttpResponseRedirect('/login/?next=%s' % request.path)
@@ -25,8 +28,22 @@ def addLine(request):
 		if request.method == 'POST':
 			form = AddLineForm(request.POST)
 			if form.is_valid():
-				# process form data
+				#validate barcodes
 				barcode = form.cleaned_data['barcode']
+				try:
+						try:
+							barcodeFound = Barcode.objects.filter(pk=barcode).get()
+						except:
+							raise Exception, 'Barcode has not been registered with database'
+						if (barcodeFound.used):
+							raise Exception, 'Barcode already in use'
+				except Exception, ex:
+						dict['definesHeader'] = True
+						dict['header'] = "Error encountered: " + str(ex)
+						dict['form'] = AddLineForm()
+						dict['action_slug'] = "addline"
+						return render_to_response('form.html', dict, context_instance=RequestContext(request))
+				# process form data
 				name = form.cleaned_data['name']
 				IACUC_ID = form.cleaned_data['IACUC_ID']
 				parent = form.cleaned_data['parent']
@@ -47,7 +64,7 @@ def addLine(request):
 				else:
 					newline = Line(barcode=barcode ,name=name, IACUC_ID=IACUC_ID, raised=raised, parent=parent, original_quantity=original_quantity, current_quantity=current_quantity, container=container, location=location, sex=sex, active=active, strain=strain, birthdate=birthdate, owner=owner)
 				newline.save()
-				
+				create_HistoryItem('addline', sm, False, '', True, [barcode])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			form = AddLineForm()
@@ -901,7 +918,26 @@ def addMating(request):
 		dict['first_name'] = sm.first_name
 		dict['actions'] = get_user_allowed_actions(sm)
 		if request.method == 'POST':
+			#Validate barcodes
+			quantity = int(request.POST.get('quantity'))
+			firstBarcode = int(request.POST.get('firstBarcode'))
+			try:
+				for x in range(firstBarcode,quantity+firstBarcode):
+						try:
+							barcodeFound = Barcode.objects.filter(pk=x).get()
+						except:
+							raise Exception, 'Barcode has not been registered with database'
+						if (barcodeFound.used):
+							raise Exception, 'Barcode already in use'
+			except Exception, ex:
+					dict['definesHeader'] = True
+					dict['header'] = "Error encountered: " + str(ex)
+					dict['form'] = AddMatingForm()
+					dict['action_slug'] = "addmating"
+					return render_to_response('matingform.html', dict, context_instance=RequestContext(request))
+
 			# process form data
+			matingType = typeM = request.POST.get('matingType')
 			typeM = request.POST.get('typeM')
 			barcodeMale = request.POST.get('barcodeMale')
 			if (typeM == 'Line'):
@@ -910,28 +946,33 @@ def addMating(request):
 				line = Product.objects.filter(barcode__exact=barcodeMale).get().line_id
 			typeF = request.POST.get('typeF')
 			barcodeFemale = request.POST.get('barcodeFemale')
-			if (barcodeFemale == ''):
+			if (barcodeFemale == '' or matingType == 'in'):
 				line2 = None
-			elif (typef == 'Line'):
+			elif (typeF == 'Line'):
 				line2 = Line.objects.filter(barcode__exact=barcodeFemale).get()
 			else:
 				line2 = Product.objects.filter(barcode__exact=barcodeFemale).get().line_id
-			quantity = request.POST.get('quantity')
-			firstBarcode = request.POST.get('firstBarcode')
-			#Get type info
+			type =  ProductType.objects.filter(type__exact='Mating').get()
+			containerID = request.POST.get('container')
+			container = Container_types.objects.filter(pk=containerID).get()
 			#get container info
 			
-			new = {}
-			if line == None:
-				new = Product(barcode=firstBarcode, type=type, container=container, active=False, owner=sm)
-			elif line2 == None:
-				new = Product(barcode=firstBarcode, line_id=line, type=type, container=container, active=False, owner=sm)
-			else:
-				new = Product(barcode=firstBarcode, line_id=line, line2_id=line2, type=type, container=container, active=False, owner=sm)
-			new.save()
+			for x in range(firstBarcode,quantity+firstBarcode):
+				new = {}
+				if line == None:
+					new = Product(barcode=str(x), type=type, container=container, active=False, owner=sm)
+				elif line2 == None:
+					new = Product(barcode=str(x), line_id=line, type=type, container=container, active=False, owner=sm)
+				else:
+					new = Product(barcode=str(x), line_id=line, line2_id=line2, type=type, container=container, active=False, owner=sm)
+				new.save()
+				barcode = Barcode.objects.filter(pk=x).get()
+				barcode.used = True
+				barcode.save()
 				
 			return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
+			dict['form'] = AddMatingForm()
 			dict['action_slug'] = "addmating"
 			return render_to_response('matingform.html', dict, context_instance=RequestContext(request))
 
@@ -949,6 +990,31 @@ def show_user_menu(request):
 		dict['first_name'] = sm.first_name
 		dict['actions'] = get_user_allowed_actions(sm)
 		return render_to_response('homepage.html', dict)
+
+def create_HistoryItem(action, user, due, instructions, finished, params):
+	dict = locals()
+	sm = user
+	actionObject = Action.objects.filter(slug__exact=action).get()
+	now = date.today()
+	if (due == False):
+		dueDate = date.today()
+	else:
+		dueDate = due
+	reqd_ins = instructions
+	isComplete = finished
+	if (len(params) == 1):
+		h = HistoryItem(action=actionObject, who=sm, date=now, reqd_date=dueDate, reqd_instructions=reqd_ins, finished=isComplete, param_1=int(params[0]))
+	if (len(params) == 2):
+		h = HistoryItem(action=actionObject, who=sm, date=now, reqd_date=dueDate, reqd_instructions=reqd_ins, finished=isComplete, param_1=int(params[0]), param_2=int(params[1]))
+	if (len(params) ==3):
+		h = HistoryItem(action=actionObject, who=sm, date=now, reqd_date=dueDate, reqd_instructions=reqd_ins, finished=isComplete, param_1=int(params[0]), param_2=int(params[1]), param_3=int(params[2]))
+	if (len(params) == 4):
+		h = HistoryItem(action=actionObject, who=sm, date=now, reqd_date=dueDate, reqd_instructions=reqd_ins, finished=isComplete, param_1=int(params[0]), param_2=int(params[1]), param_3=int(params[2]), param_4=int(params[3]))
+	if (len(params) == 5):
+		h = HistoryItem(action=actionObject, who=sm, date=now, reqd_date=dueDate, reqd_instructions=reqd_ins, finished=isComplete, param_1=int(params[0]), param_2=int(params[1]), param_3=int(params[2]), param_4=int(params[3]), param_5=int(params[4]))
+	if (len(params) == 6):
+		h = HistoryItem(action=actionObject, who=sm, date=now, reqd_date=dueDate, reqd_instructions=reqd_ins, finished=isComplete, param_1=int(params[0]), param_2=int(params[1]), param_3=int(params[2]), param_4=int(params[3]), param_5=int(params[4]), param_6=int(params[5]))
+	h.save()
 		
 def create_request(request):
 	action_id = request.POST['action_id']
