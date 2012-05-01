@@ -40,7 +40,8 @@ def addLine(request):
 				except Exception, ex:
 						dict['definesHeader'] = True
 						dict['header'] = "Error encountered: " + str(ex)
-						dict['form'] = AddLineForm()
+						initial = {'name': form.cleaned_data['name'], 'barcode': form.cleaned_data['barcode'],'IACUC_ID': form.cleaned_data['IACUC_ID'], 'raised': form.cleaned_data['raised'],'current_quantity': form.cleaned_data['current_quantity'],'original_quantity': form.cleaned_data['original_quantity'], 'container': form.cleaned_data['container'], 'sex': form.cleaned_data['sex'], 'active': form.cleaned_data['active'], 'strain': form.cleaned_data['strain'],'location': form.cleaned_data['location'],'birthdate': form.cleaned_data['birthdate']}
+						dict['form'] = AddLineForm(initial=initial)
 						dict['action_slug'] = "addline"
 						return render_to_response('form.html', dict, context_instance=RequestContext(request))
 				# process form data
@@ -64,10 +65,11 @@ def addLine(request):
 				else:
 					newline = Line(barcode=barcode ,name=name, IACUC_ID=IACUC_ID, raised=raised, parent=parent, original_quantity=original_quantity, current_quantity=current_quantity, container=container, location=location, sex=sex, active=active, strain=strain, birthdate=birthdate, owner=owner)
 				newline.save()
-				create_HistoryItem('addline', sm, False, '', True, [barcode])
+				create_HistoryItem('addline', sm, False, '', True, [newline.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
-			form = AddLineForm()
+			initial = {'owner': sm}
+			form = AddLineForm(initial=initial)
 		dict['form'] = form
 		dict['action_slug'] = "addline"
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
@@ -86,10 +88,32 @@ def editLine(request):
 				# submitting the modification
 				form = AddLineForm(request.POST)
 				if form.is_valid():
-					# process form data
+					#validate barcodes
 					pk = form.cleaned_data['pk']
 					new = Line.objects.filter(pk=pk).get()
-					
+					barcode = form.cleaned_data['barcode']
+					try:
+						try:
+							barcodeFound = Barcode.objects.filter(pk=barcode).get()
+						except:
+							raise Exception, 'Barcode has not been registered with database'
+						if (barcodeFound.used and new.barcode <> barcodeFound.id):
+							raise Exception, 'Cannot overwrite another barcode'
+						elif(not barcodeFound.used):
+							oldBarcode = Barcode.objects.filter(pk=new.barcode).get()
+							oldBarcode.used = False
+							oldBarcode.save()
+							barcodeFound.used = True
+							barcodeFound.save()
+					except Exception, ex:
+						dict['definesHeader'] = True
+						dict['header'] = "Error encountered: " + str(ex)
+						to_edit = Line.objects.filter(pk=pk).get()
+						initial = {'name': to_edit.name, 'pk': to_edit.pk, 'barcode': to_edit.barcode,'IACUC_ID': to_edit.IACUC_ID, 'raised': to_edit.raised,'current_quantity': to_edit.current_quantity,'original_quantity': to_edit.original_quantity, 'container': to_edit.container, 'sex': to_edit.sex, 'active': to_edit.active, 'strain': to_edit.strain, 'owner': to_edit.owner}
+						dict['form'] = AddLineForm(initial=initial)
+						dict['action_slug'] = "editline"
+						return render_to_response('form.html', dict, context_instance=RequestContext(request))
+					# process form data					
 					new.barcode = form.cleaned_data['barcode']
 					new.name = form.cleaned_data['name']
 					new.IACUC_ID = form.cleaned_data['IACUC_ID']
@@ -104,13 +128,21 @@ def editLine(request):
 					new.strain = form.cleaned_data['strain']
 					new.owner = form.cleaned_data['owner']
 					new.save()
+					create_HistoryItem('editline', sm, False, '', True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
-				to_edit = Line.objects.filter(barcode__exact=selection).get()
-				initial = {'name': to_edit.name, 'pk': to_edit.pk, 'barcode': to_edit.barcode,'IACUC_ID': to_edit.IACUC_ID, 'raised': to_edit.raised,'current_quantity': to_edit.current_quantity,'original_quantity': to_edit.original_quantity, 'container': to_edit.container, 'sex': to_edit.sex, 'active': to_edit.active, 'strain': to_edit.strain, 'owner': to_edit.owner}
-				if not to_edit.parent == None:
-					initial['parent'] = to_edit.parent.pk
+				try:
+					to_edit = Line.objects.filter(barcode__exact=selection).get()
+					initial = {'name': to_edit.name, 'pk': to_edit.pk, 'barcode': to_edit.barcode,'IACUC_ID': to_edit.IACUC_ID, 'raised': to_edit.raised,'current_quantity': to_edit.current_quantity,'original_quantity': to_edit.original_quantity, 'container': to_edit.container, 'sex': to_edit.sex, 'active': to_edit.active, 'strain': to_edit.strain, 'location': to_edit.location, 'birthdate': to_edit.birthdate, 'owner': to_edit.owner}
+					if not to_edit.parent == None:
+						initial['parent'] = to_edit.parent.pk
+				except Exception, ex:
+					dict['definesHeader'] = True
+					dict['header'] = "Error encountered: Barcode not valid"
+					dict['form'] = EnterBarcodeForm()
+					dict['action_slug'] = "editline"
+					return render_to_response('form.html', dict, context_instance=RequestContext(request))
 				form = AddLineForm(initial=initial)
 		else:
 			# choosing what object to edit
@@ -125,12 +157,18 @@ def viewItemRedirect(request):
 	else:
 		if request.method == 'GET':
 			selection = request.GET.get('barcode')
-			destination = request.GET.get('type')
-			if destination == 'Line':
+			try:
+				line = Line.objects.filter(barcode=selection).get()
 				return viewLine(request,selection)
-			else:
-				if destination == 'Product':
+			except:
+				try:
+					product = Product.objects.filter(barcode=selection).get()
 					return viewProduct(request,selection)
+				except:
+					dict = locals()
+					dict['definesHeader'] = True
+					dict['header'] = "Error encountered: Barcode not valid"
+					return render_to_response('homepage.html', dict, context_instance=RequestContext(request))
 
 
 def viewLine(request, id):
@@ -177,7 +215,7 @@ def addProductType(request):
 				type = form.cleaned_data['type']
 				new = ProductType(type=type)
 				new.save()
-				
+				create_HistoryItem('addproducttype', sm, False, '', True, [new.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			form = AddProductTypeForm()
@@ -203,8 +241,10 @@ def editProductType(request):
 					type = form.cleaned_data['type']
 					pk = form.cleaned_data['pk']
 					new = ProductType.objects.filter(pk=pk).get()
+					oldType = new.type
 					new.type = type
 					new.save()
+					create_HistoryItem('editproducttype', sm, False, oldType+' -> '+type, True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
@@ -240,7 +280,25 @@ def addProduct(request):
 				container = form.cleaned_data['container']
 				active = form.cleaned_data['active']
 				owner = form.cleaned_data['owner']
-			
+				
+				#validate barcode
+				barcode = form.cleaned_data['barcode']
+				try:
+					try:
+						barcodeFound = Barcode.objects.filter(pk=barcode).get()
+					except:
+						raise Exception, 'Barcode has not been registered with database'
+					if (barcodeFound.used):
+						raise Exception, 'Barcode already in use'
+				except Exception, ex:
+					dict['definesHeader'] = True
+					dict['header'] = "Error encountered: " + str(ex)
+					initial = {'name': name, 'barcode': barcode, 'line': linecode, 'line2': line2code, 'type': type, 'container': container,'active': active, 'owner':owner}
+					dict['form'] = AddProductForm(initial=initial)
+					dict['action_slug'] = "addproduct"
+					return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+				# Save data
 				new = {}
 				if line == None:
 					new = Product(barcode=barcode, name=name, type=type, container=container, active=active, owner=owner)
@@ -249,6 +307,9 @@ def addProduct(request):
 				else:
 					new = Product(barcode=barcode, name=name, line_id=line, line2_id=line2, type=type, container=container, active=active, owner=owner)
 				new.save()
+				barcodeFound.used=True
+				barcodeFound.save()
+				create_HistoryItem('addproduct', sm, False, '', True, [new.id])
 				
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
@@ -284,22 +345,61 @@ def editProduct(request):
 					line2 = Line.objects.filter(barcode__exact=line2code).get()
 					owner = form.cleaned_data['owner']
 					new = Product.objects.filter(pk=pk).get()
+
+					#validate barcode
+					try:
+						try:
+							barcodeFound = Barcode.objects.filter(pk=barcode).get()
+						except:
+							raise Exception, 'Barcode has not been registered with database'
+						if (barcodeFound.used and new.barcode <> barcodeFound.id):
+							raise Exception, 'Cannot overwrite another barcode'
+						elif(not barcodeFound.used):
+							oldBarcode = Barcode.objects.filter(pk=new.barcode).get()
+							oldBarcode.used = False
+							oldBarcode.save()
+							barcodeFound.used = True
+							barcodeFound.save()
+					except Exception, ex:
+						dict['definesHeader'] = True
+						dict['header'] = "Error encountered: " + str(ex)
+						to_edit = Product.objects.filter(pk=new.id).get()
+						initial = {'name': to_edit.name, 'pk': to_edit.pk, 'barcode': to_edit.barcode, 'type': to_edit.type.pk, 'container': to_edit.container,'active': to_edit.active, 'owner':to_edit.owner}
+						if not to_edit.line_id == None:
+							initial['line'] = to_edit.line_id.barcode
+						if not to_edit.line2_id == None:
+							initial['line2'] = to_edit.line2_id.barcode
+						form = AddProductForm(initial=initial)
+						dict['form'] = AddProductForm(initial=initial)
+						dict['action_slug'] = "editproduct"
+						return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+					#Save Form Data
 					new.name = name
+					new.barcode = barcode
 					new.type = type
 					new.container = container
 					new.active = active
 					new.line_id = line
 					new.owner = owner
 					new.save()
+					create_HistoryItem('editproduct', sm, False, '', True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
-				to_edit = Product.objects.filter(barcode__exact=selection).get()
-				initial = {'name': to_edit.name, 'pk': to_edit.pk, 'barcode': to_edit.barcode, 'type': to_edit.type.pk, 'container': to_edit.container,'active': to_edit.active, 'owner':to_edit.owner}
-				if not to_edit.line_id == None:
-					initial['line'] = to_edit.line_id.barcode
-				if not to_edit.line2_id == None:
-					initial['line2'] = to_edit.line2_id.barcode
+				try:
+					to_edit = Product.objects.filter(barcode__exact=selection).get()
+					initial = {'name': to_edit.name, 'pk': to_edit.pk, 'barcode': to_edit.barcode, 'type': to_edit.type.pk, 'container': to_edit.container,'active': to_edit.active, 'owner':to_edit.owner}
+					if not to_edit.line_id == None:
+						initial['line'] = to_edit.line_id.barcode
+					if not to_edit.line2_id == None:
+						initial['line2'] = to_edit.line2_id.barcode
+				except Exception, ex:
+					dict['definesHeader'] = True
+					dict['header'] = "Error encountered: Barcode not valid"
+					dict['form'] = EnterBarcodeForm()
+					dict['action_slug'] = "editproduct"
+					return render_to_response('form.html', dict, context_instance=RequestContext(request))
 				form = AddProductForm(initial=initial)
 		else:
 			# choosing what object to edit
@@ -355,7 +455,7 @@ def addGenome(request):
 				newgenome = {}
 				newgenome = GeneticElement(version=version, chromosome=chromosome, position=position, insert_name=insert_name, allele_type=allele_type)
 				newgenome.save()
-				
+				create_HistoryItem('addgenome', sm, False, '', True, [newgenome.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			form = AddGenomeForm()
@@ -387,6 +487,7 @@ def editGenome(request):
 					new.insert_name = form.cleaned_data['insert_name']
 					new.allele_type = form.cleaned_data['allele_type']
 					new.save()
+					create_HistoryItem('editgenome', sm, False, '', True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
@@ -435,7 +536,7 @@ def addGenomeVersion(request):
 				newgenome = {}
 				newgenome = Genome_version(name=name)
 				newgenome.save()
-				
+				create_HistoryItem('addgenomeversion', sm, False, '', True, [newgenome.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			form = AddGenomeVersionForm()
@@ -460,9 +561,10 @@ def editGenomeVersion(request):
 					# process form data
 					pk = form.cleaned_data['pk']
 					new = Genome_version.objects.filter(pk=pk).get()
-					
+					oldName = new.name
 					new.name = form.cleaned_data['name']
 					new.save()
+					create_HistoryItem('editgenomeversion', sm, False, oldName+' -> '+new.name, True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
@@ -493,7 +595,7 @@ def addContainerType(request):
 				newcontainer = {}
 				newcontainer = Container_types(type=type)
 				newcontainer.save()
-				
+				create_HistoryItem('addcontainer', sm, False, '', True, [newcontainer.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			form = AddContainerTypeForm()
@@ -518,9 +620,10 @@ def editContainerType(request):
 					# process form data
 					pk = form.cleaned_data['pk']
 					new = Container_types.objects.filter(pk=pk).get()
-					
+					oldType = new.type
 					new.type = form.cleaned_data['type']
 					new.save()
+					create_HistoryItem('editcontainer', sm, False, oldType+' -> '+new.type, True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
@@ -556,7 +659,7 @@ def addAlleleType(request):
 				newallalle = {}
 				newallalle = Allele_type(type=type, size=size, orientation=orientation)
 				newallalle.save()
-				
+				create_HistoryItem('addalleletype', sm, False, '', True, [newallalle.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			form = AddAlleleTypeForm()
@@ -589,6 +692,7 @@ def editAlleleType(request):
 						new.size = 0
 					new.orientation = form.cleaned_data['orientation']
 					new.save()
+					create_HistoryItem('editalleletype', sm, False, '', True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
@@ -622,7 +726,7 @@ def addInsertName(request):
 				newname = {}
 				newname = Insert_name(name=name, creator=creator, ref_number=ref_number, sequence=sequence)
 				newname.save()
-				
+				create_HistoryItem('addinsertname', sm, False, '', True, [newname.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			form = AddInsertNameForm()
@@ -647,12 +751,13 @@ def editInsertName(request):
 					# process form data
 					pk = form.cleaned_data['pk']
 					new = Insert_name.objects.filter(pk=pk).get()
-					
+					oldName = new.name
 					new.name = form.cleaned_data['name']
 					new.creator = form.cleaned_data['creator']
 					new.ref_number = form.cleaned_data['ref_number']
 					new.sequence = form.cleaned_data['sequence']
 					new.save()
+					create_HistoryItem('editinsertname', sm, False, oldName+' -> '+new.name, True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
@@ -683,7 +788,7 @@ def addGenomeAssociation(request):
 			
 				line.genomes.add(genome)
 				line.save()
-				
+				create_HistoryItem('addgenomeassociation', sm, False, '', True, [line.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			form = AddGenomeAssociationForm()
@@ -791,10 +896,10 @@ def splitLine(request):
 					initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
 					form = SplitLineFinalForm(initial = initial)
 				except Exception, ex:
-					initial = {'selection' : ex}
-					form = EnterBarcodeForm(initial=initial)
-					#initial = {'lineBarcode': lineBarcode, 'product_Type': product_Type, 'product_container': product_container, 'step' : 'Singles'}
-					#form = SplitLineSinglesForm(initial = initial)
+					initial = {'lineBarcode': request.POST.get('lineBarcode'), 'product_Type': request.POST.get('product_Type'), 'product_container': request.POST.get('product_container'), 'first_Barcode': request.POST.get('first_Barcode'), 'first_product_Barcode': request.POST.get('first_product_Barcode'), 'quantity': request.POST.get('quantity'), 'location': request.POST.get('location'), 'container': request.POST.get('container'), 'active': request.POST.get('active'), 'step' : 'Singles'}
+					dict['definesHeader'] = True
+					dict['header'] = "Error: " + str(ex)
+					form = SplitLineSinglesForm(initial = initial)
 			elif step == 'Group': #Group information recieved
 				try:
 					#check validity
@@ -815,6 +920,7 @@ def splitLine(request):
 					if (newLineBarcode == productBarcode):
 						raise Exception, 'Barcodes overlap'
 					#create splits
+					quantity = request.POST.get('quantity')
 					location = request.POST.get('location')
 					lineContainernumber = request.POST.get('container')
 					lineContainer = Container_types.objects.filter(pk=lineContainernumber).get()
@@ -823,9 +929,9 @@ def splitLine(request):
 					#Create Line
 					newline = {}
 					if old.parent == None:
-						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, original_quantity=1, current_quantity=1, container=lineContainer, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
+						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, original_quantity=quantity, current_quantity=quantity, container=lineContainer, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
 					else:
-						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, parent=old.parent, original_quantity=1, current_quantity=1, container=lineContainer, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
+						newline = Line(barcode=newLineBarcode ,name=old.name + ' : ' + str(newLineBarcode), IACUC_ID=old.IACUC_ID, raised=old.raised, parent=old.parent, original_quantity=quantity, current_quantity=quantity, container=lineContainer, location=location, sex=old.sex, active=active, strain=old.strain, birthdate=old.birthdate, owner=old.owner)
 					newline.save()
 					#Create Product
 					modelNewLine = Line.objects.filter(barcode__exact=newLineBarcode).get()
@@ -857,8 +963,8 @@ def splitLine(request):
 					nextNum = str(int(request.POST.get('groupNum')))
 					dict['groupNum'] = nextNum
 					dict['definesHeader'] = True
-					dict['header'] = "Group split #" + str(nextNum) + " --" + str(ex) + "-- "
-					initial = {'lineBarcode': lineBarcode, 'product_Type': product_Type_Number, 'product_container': product_container_number, 'step' : 'Group', 'groupNum' : nextNum}
+					dict['header'] = "Group split #" + str(nextNum) + " --- Error:" + str(ex)
+					initial = {'lineBarcode': lineBarcode, 'product_Type': product_Type_Number, 'product_container': product_container_number, 'quantity': request.POST.get('quantity'), 'newLineBarcode': request.POST.get('newLineBarcode'), 'product_Barcode': request.POST.get('product_Barcode'), 'location': request.POST.get('location'), 'container': request.POST.get('container'), 'active': request.POST.get('active'),  'step' : 'Group', 'groupNum' : nextNum}
 					form = SplitLineGroupsForm(initial = initial)
 			elif step == 'Final': #Final info recieved
 				try:
@@ -873,6 +979,7 @@ def splitLine(request):
 					oldLine.location = newLocation
 					oldLine.active = active
 					oldLine.save()
+					create_HistoryItem('splitline', sm, False, '', True, [oldLine.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 				except:
 					initial = {'lineBarcode': lineBarcode, 'step' : 'Final'}
@@ -899,6 +1006,7 @@ def addBarcodes(request):
 				newBarcode = {}
 				newBarcode = Barcode(id=lastUsed+x, used=False)
 				newBarcode.save()
+			create_HistoryItem('addbarcodes', sm, False, '', True, [quantity])
 			dict['definesHeader'] = True
 			dict['header'] = "Created " + str(quantity) + " barcodes starting at " + str(lastUsed+1) + " and ending at " + str(lastUsed+quantity)
 			return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
@@ -969,7 +1077,12 @@ def addMating(request):
 				barcode = Barcode.objects.filter(pk=x).get()
 				barcode.used = True
 				barcode.save()
-				
+				dueDate = date.today() + timedelta(days=5)
+				create_HistoryItem('PromoteMating', sm, dueDate, 'Promote to line?', False, [new.id])
+			if (line2 == None):
+				create_HistoryItem('addmating', sm, False, 'Added ' + str(quantity), True, [line.id])
+			else:
+				create_HistoryItem('addmating', sm, False, 'Added ' + str(quantity), True, [line.id,line2.id])
 			return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			dict['form'] = AddMatingForm()
@@ -994,7 +1107,7 @@ def show_user_menu(request):
 def create_HistoryItem(action, user, due, instructions, finished, params):
 	dict = locals()
 	sm = user
-	actionObject = Action.objects.filter(slug__exact=action).get()
+	actionObject = str(action)
 	now = date.today()
 	if (due == False):
 		dueDate = date.today()
@@ -1002,6 +1115,8 @@ def create_HistoryItem(action, user, due, instructions, finished, params):
 		dueDate = due
 	reqd_ins = instructions
 	isComplete = finished
+	if (len(params) == 0):
+		h = HistoryItem(action=actionObject, who=sm, date=now, reqd_date=dueDate, reqd_instructions=reqd_ins, finished=isComplete)
 	if (len(params) == 1):
 		h = HistoryItem(action=actionObject, who=sm, date=now, reqd_date=dueDate, reqd_instructions=reqd_ins, finished=isComplete, param_1=int(params[0]))
 	if (len(params) == 2):
@@ -1017,7 +1132,7 @@ def create_HistoryItem(action, user, due, instructions, finished, params):
 	h.save()
 		
 def create_request(request):
-	action_id = request.POST['action_id']
+	action_id = request.POST['action']
 	reqd_by_id = request.POST['reqd_by_id']
 	reqd_ins = request.POST['reqd_ins']
 	p1 = request.POST['p1']
@@ -1026,7 +1141,7 @@ def create_request(request):
 	p4 = reqest.POST['p4']
 	p5 = request.POST['p5']
 	p6 = reqest.POST['p6']
-	a = Action.objects.get(id=action_id)
+	a = action_id
 	rb = StaffMember.objects.get(id=reqd_by_id)
 	h = HistoryItem(action=a, reqd_by=rb, reqd_instructions=reqd_ins, param_1=p1, param_2=p2, param_3=p3, param_4=p4, param_5=p5, param_6=p6)
 	h.save()

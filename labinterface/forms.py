@@ -18,7 +18,7 @@ class AddLineForm(forms.Form):
 	sex = forms.ChoiceField(choices=Line.SEX_CHOICES)
 	strain = forms.CharField(required=False)
 	active = forms.BooleanField(required=False)
-	#owner = forms.ModelChoiceField(queryset=StaffMember.objects.all(), )
+	owner = forms.ModelChoiceField(queryset=StaffMember.objects.all(), )
 	birthdate = forms.DateField(required=False)
 
 class EnterBarcodeForm(forms.Form):

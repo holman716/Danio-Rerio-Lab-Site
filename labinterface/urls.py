@@ -12,6 +12,7 @@ urlpatterns = patterns('',
 	# Base menu
 	
 	url(r'^$',  show_user_menu, name="index"),
+	url(r'^error$',  show_user_menu, name="index"),
 	
 	url(r'^action/addline/$', addLine, name="addline"),
 	url(r'^action/editline/$', editLine, name="editline"),

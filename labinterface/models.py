@@ -25,7 +25,7 @@ class Action(models.Model):
 		
 class HistoryItem(models.Model):
 	id = models.AutoField(primary_key=True)
-	action = models.ForeignKey('Action')
+	action = models.TextField(blank=True)
 	who = models.ForeignKey('StaffMember', related_name='historyitem_who_set', blank=True, null=True)
 	date = models.DateField(blank=True, null=True)
 	reqd_by = models.ForeignKey('StaffMember', blank=True, null=True)

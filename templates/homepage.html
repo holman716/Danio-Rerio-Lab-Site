@@ -2,12 +2,9 @@
 {% load i18n %}
 
 {% block content %}
+{% if definesHeader %}<p><b>{{header}}</b></p>{% endif %}
 <p>View item (enter barcode):
 <form name="input" action="/action/viewitem" method="get">
-	<select name="type">
-		<option value="Line">Line</option>
-		<option value="Product">Product</option>
-	</select> 
 	<input type="text" name="barcode" />
 	<input type="submit" value="Submit" />
 </form></p>
