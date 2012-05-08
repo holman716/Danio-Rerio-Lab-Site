@@ -3,6 +3,13 @@ body{
 	text-align: center;
 	background-color: #666666;
 }
+td{
+	padding-top:2px;
+	padding-bottom:2px;
+	padding-right:4px;
+	padding-left:4px;
+	text-align:center;
+}
 #central{
 	margin-right: auto;
 	margin-left: auto;

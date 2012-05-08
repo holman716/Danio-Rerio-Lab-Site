@@ -13,6 +13,11 @@ urlpatterns = patterns('',
 	
 	url(r'^$',  show_user_menu, name="index"),
 	url(r'^error$',  show_user_menu, name="index"),
+
+	url(r'^history$',  historyTable, name="viewhistory"),
+	url(r'^processitem/(?P<id>\w+)/$', processHistory, name="processhistory"),
+
+	url(r'^activelines$',  viewActiveLines, name="viewactivelines"),
 	
 	url(r'^action/addline/$', addLine, name="addline"),
 	url(r'^action/editline/$', editLine, name="editline"),

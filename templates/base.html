@@ -84,6 +84,9 @@ document.onclick = jsddm_close;
 				<p><a href="/">Home</a></p>
 				<p><a href="/logout/">Logout</a></p>
 				<br />
+				<p><a href="/history">View History</a></p>
+				<p><a href="/activelines">Active Lines</a></p>
+				<br />
 				{% for o in actions %}
 				<p><a href="/action/{{ o.slug }}/">{{ o.name }}</a></p>
 				{% endfor %}

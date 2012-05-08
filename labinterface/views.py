@@ -1089,6 +1089,83 @@ def addMating(request):
 			dict['action_slug'] = "addmating"
 			return render_to_response('matingform.html', dict, context_instance=RequestContext(request))
 
+def historyTable(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+
+		todoHistory = []
+		todoHistory += HistoryItem.objects.filter(finished__exact=False).all()
+		finishedHistory = []
+		finishedHistory += HistoryItem.objects.filter(finished__exact=True).all()
+
+		dict['todo_table'] = todoHistory
+		dict['finished_table'] = finishedHistory
+		
+		return render_to_response('history.html', dict, context_instance=RequestContext(request))
+
+def processHistory(request,id):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+
+		hi = HistoryItem.objects.filter(id=id).get()
+
+		obj = Product.objects.filter(id=hi.param_1).get()
+		dict['qr_code'] = qrcode(obj.barcode)
+		dict['name'] = obj.name
+		if obj.line_id == None:
+			dict['line_id'] = "None"
+		else: 
+			dict['line_id'] = obj.line_id
+			if obj.line2_id == None:
+				dict['line2_id'] = "None"
+			else: 
+				dict['line2_id'] = obj.line2_id
+		dict['type'] = obj.type
+		dict['container'] = obj.container
+		dict['active'] = obj.active
+		dict['owner'] = obj.owner
+		
+		return render_to_response('viewproduct.html', dict, context_instance=RequestContext(request))
+
+##################################TODO
+def processMating(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+
+		return render_to_response('success.html', dict, context_instance=RequestContext(request))
+
+def viewActiveLines(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+
+		active_fish = []
+		active_fish += Line.objects.filter(active__exact=True).all()
+		active_fish.sort(key=lambda x: x.barcode)
+
+		dict['active_fish'] = active_fish
+		
+		return render_to_response('activeLines.html', dict, context_instance=RequestContext(request))
+
 ##############
 #####
 #####    Other Functions

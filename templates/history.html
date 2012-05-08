@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load customFilters %}
+
+{% block content %}
+<h1> Items to do </h1>
+<p>
+<table border="1" cellpadding="10%" cellspacing="0">
+	<tr>
+		<td><b>Date Added</b></td>
+		<td>Action</td>
+		<td>User</td>
+		<td width="30%">Special Instructions</td>
+		<td>Due</td>
+		<td>Action</td>
+	</tr>
+{% for o in todo_table %}
+	<tr>
+		<td>{{ o.date }}</td>
+		<td>{{ o.action }}</td>
+		<td>{{ o.who }}</td>
+		<td>{{ o.reqd_instructions }}</td>
+		<td>
+			{% if o.reqd_date|timeuntil == '0 minutes' %}
+				{% if "day" in o.reqd_date|timesince|split_timeuntil %}
+					<font color="red">Today!
+					<br>{{ o.reqd_date|timesince|split_timeuntil}} overdue</font>
+				{%else%}
+					<font color="red">Today</font>
+				{%endif%}
+			{% else %}
+				{% if "day" in o.reqd_date|timeuntil|split_timeuntil %}
+					In {{ o.reqd_date|timeuntil|split_timeuntil}}
+				{%else%}
+					{% if "week" in o.reqd_date|timeuntil|split_timeuntil %}
+						In {{ o.reqd_date|timeuntil|split_timeuntil}}
+					{%else%}
+						Tomorrow
+					{%endif%}
+				{%endif%}
+			{%endif%}
+		</td>
+		<td>
+			<a href="/processitem/{{o.id}}">Process</a>
+		</td>
+	</tr>
+{% endfor %}
+</table>
+</p>
+
+<hr>
+
+<h1> Items Finished </h1>
+<p>
+<table border="1" cellpadding="10%" cellspacing="0">
+	<tr>
+		<td><b>Date Added</b></td>
+		<td>Action</td>
+		<td>User</td>
+	</tr>
+{% for o in finished_table %}
+	<tr>
+		<td>{{ o.date }}</td>
+		<td>{{ o.action }}</td>
+		<td>{{ o.who }}</td>
+	</tr>
+{% endfor %}
+</table>
+</p>
+
+{% endblock %}

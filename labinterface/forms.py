@@ -141,6 +141,9 @@ class AddMatingForm(forms.Form):
 	firstBarcode = forms.IntegerField(help_text="What is the first barcode?")
 	container = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label="(Unknown)", required=False, help_text="What container will the mating be stored in?")
 
+class ProcessMatingForm(forms.Form):
+	productId = forms.CharField(widget=forms.HiddenInput(), required=False)
+
 class MyRegistrationForm(RegistrationForm):
 	attrs_dict = { 'class': 'required' }
 	# this allows us to create profile objects (StaffMember objects) to

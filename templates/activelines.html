@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load customFilters %}
+
+{% block content %}
+<h1> Currently active lines </h1>
+<p>
+<table border="1" cellpadding="10%" cellspacing="0">
+	<tr>
+		<td><b>Barcode</b></td>
+		<td>Name</td>
+		<td>Current Quantity</td>
+		<td>Location</td>
+		<td>Strain</td>
+		<td>Sex</td>
+		<td>Actions</td>
+	</tr>
+{% for o in active_fish %}
+	<tr>
+		<td>{{ o.barcode }}</td>
+		<td>{{ o.name }}</td>
+		<td>{{ o.current_quantity }}</td>
+		<td>{{ o.location }}</td>
+		<td>{{ o.strain }}</td>
+		<td>{{ o.sex }}</td>
+		<td>
+			<a href="/processline/{{o.id}}">Process</a>
+		</td>
+	</tr>
+{% endfor %}
+</table>
+</p>
+{% endblock %}
