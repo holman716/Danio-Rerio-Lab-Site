@@ -7,3 +7,8 @@ register = template.Library()
 @stringfilter
 def split_timeuntil(duration):
     return duration.split(",")[0]
+
+@register.filter
+@stringfilter
+def removePrefixNumber(category):
+    return category[2:]

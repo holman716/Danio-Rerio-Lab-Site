@@ -18,9 +18,12 @@ urlpatterns = patterns('',
 	url(r'^processitem/(?P<id>\w+)/$', processHistory, name="processhistory"),
 
 	url(r'^activelines$',  viewActiveLines, name="viewactivelines"),
+	url(r'^activeproducts$',  viewActiveProducts, name="viewactiveproducts"),
 	
 	url(r'^action/addline/$', addLine, name="addline"),
 	url(r'^action/editline/$', editLine, name="editline"),
+	url(r'^action/editline/(?P<id>\w+)/$', editLineByBarcode, name="editline"),
+	url(r'^action/euthinizeline/(?P<id>\w+)/$', euthinizeLine, name="editline"),
 	url(r'^action/viewitem/$', viewItemRedirect, name="viewitem"),
 	url(r'^action/viewline/(?P<id>\w+)/$', viewLine, name="viewline"),
 	

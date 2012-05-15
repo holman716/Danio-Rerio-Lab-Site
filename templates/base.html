@@ -1,3 +1,5 @@
+{% load customFilters %}
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -86,10 +88,22 @@ document.onclick = jsddm_close;
 				<br />
 				<p><a href="/history">View History</a></p>
 				<p><a href="/activelines">Active Lines</a></p>
+				<p><a href="/activeproducts">Active Products</a></p>
 				<br />
-				{% for o in actions %}
+				{% block sidebar %}
+				
+				{% for category, actionList in actions.items %}
+				{% if category|removePrefixNumber == 'General' or category|removePrefixNumber == 'Admin' %}
+				{% if actionList %}
+				{{ category|removePrefixNumber }}:
+				{% for o in actionList %}
 				<p><a href="/action/{{ o.slug }}/">{{ o.name }}</a></p>
+				{% endfor %}<br/>
+				{% endif %}
+				{% endif %}
 				{% endfor %}
+				
+				{% endblock %}
 			{% else %}
 				<p>Main Menu:</p>
 				<p><a href="/">Home</a></p>

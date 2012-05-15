@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load customFilters %}
+
+{% block sidebar %}
+{% for category, actionList in actions.items %}
+{% if actionList and category|removePrefixNumber == 'Product' %}
+{{ category|removePrefixNumber }}:
+{% for o in actionList %}
+<p><a href="/action/{{ o.slug }}/">{{ o.name }}</a></p>
+{% endfor %}<br/>
+{% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<h1> Currently active products </h1>
+<p>
+<table border="1" cellpadding="10%" cellspacing="0">
+	<tr>
+		<td><b>Barcode</b></td>
+		<td>Name</td>
+		<td>Type</td>
+		<td>Source Line 1</td>
+		<td>Source Line 2</td>
+		<td>Container</td>
+		<td>Actions</td>
+	</tr>
+{% for o in active_products %}
+	<tr>
+		<td><a href="/action/viewproduct/{{ o.barcode }}">{{ o.barcode }}</a></td>
+		<td>{{ o.name }}</td>
+		<td>{{ o.type }}</td>
+		<td>{{ o.line_id }}</td>
+		<td>{{ o.line2_id }}</td>
+		<td>{{ o.container }}</td>
+		<td>
+			<a href="/processproduct/{{o.id}}">Process</a>
+		</td>
+	</tr>
+{% endfor %}
+</table>
+</p>
+{% endblock %}

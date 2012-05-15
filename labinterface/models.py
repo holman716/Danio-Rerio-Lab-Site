@@ -16,6 +16,7 @@ class Action(models.Model):
 	id = models.AutoField(primary_key=True)
 	name = models.CharField(max_length=128)
 	slug = models.SlugField()
+	type = models.CharField(max_length=128)
 
 	class Meta:
 		pass

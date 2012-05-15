@@ -38,13 +38,12 @@
     <Compile Include="manage.py" />
     <Compile Include="settings.py" />
     <Compile Include="labinterface\templatetags\customFilters.py" />
-    <Compile Include="templatetags\__init__.py" />
     <Compile Include="urls.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="labinterface\" />
-    <Folder Include="templatetags" />
+    <Folder Include="labinterface\templatetags\" />
     <Folder Include="static\" />
     <Folder Include="static\images\" />
     <Folder Include="templates\" />

@@ -22,17 +22,17 @@
 		<td>{{ o.reqd_instructions }}</td>
 		<td>
 			{% if o.reqd_date|timeuntil == '0 minutes' %}
-				{% if "day" in o.reqd_date|timesince|split_timeuntil %}
+				{% if "hour" in o.reqd_date|timesince|split_timeuntil or "minute" in o.reqd_date|timesince|split_timeuntil %}
+					<font color="red">Today</font>
+				{%else%}
 					<font color="red">Today!
 					<br>{{ o.reqd_date|timesince|split_timeuntil}} overdue</font>
-				{%else%}
-					<font color="red">Today</font>
 				{%endif%}
 			{% else %}
 				{% if "day" in o.reqd_date|timeuntil|split_timeuntil %}
 					In {{ o.reqd_date|timeuntil|split_timeuntil}}
 				{%else%}
-					{% if "week" in o.reqd_date|timeuntil|split_timeuntil %}
+					{% if "week" in o.reqd_date|timeuntil|split_timeuntil or "month" in o.reqd_date|timeuntil|split_timeuntil or "year" in o.reqd_date|timeuntil|split_timeuntil %}
 						In {{ o.reqd_date|timeuntil|split_timeuntil}}
 					{%else%}
 						Tomorrow

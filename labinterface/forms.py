@@ -136,11 +136,6 @@ class SplitLineFinalForm(forms.Form):
 	container = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label="(Unknown)", required=False, help_text="What container will now house the old line?")
 	active = forms.BooleanField(required=False, help_text="Is the line still active?")
 
-class AddMatingForm(forms.Form):
-	quantity = forms.IntegerField(help_text="How many matings are taking place?")
-	firstBarcode = forms.IntegerField(help_text="What is the first barcode?")
-	container = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label="(Unknown)", required=False, help_text="What container will the mating be stored in?")
-
 class ProcessMatingForm(forms.Form):
 	productId = forms.CharField(widget=forms.HiddenInput(), required=False)
 
