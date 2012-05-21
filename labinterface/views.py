@@ -107,7 +107,7 @@ def editLine(request):
 		dict['first_name'] = sm.first_name
 		dict['actions'] = get_user_allowed_actions(sm)
 		if request.method == 'POST':
-			selection = request.POST.get('selection')
+			selection = request.POST.get('selected_Barcode')
 			if selection is None:
 				# submitting the modification
 				form = AddLineForm(request.POST)
@@ -354,7 +354,7 @@ def editProduct(request):
 		dict['first_name'] = sm.first_name
 		dict['actions'] = get_user_allowed_actions(sm)
 		if request.method == 'POST':
-			selection = request.POST.get('selection')
+			selection = request.POST.get('selected_Barcode')
 			if selection is None:
 				# submitting the modification
 				form = AddProductForm(request.POST)
@@ -1153,7 +1153,6 @@ def processHistory(request,id):
 		if hi.action == 'Take Down Mating':
 			return takeDownMating(request,id)
 		else:
-			dict = locals()
 			dict['definesHeader'] = True
 			dict['header'] = "Error encountered: History item not valid"
 			return render_to_response('homepage.html', dict, context_instance=RequestContext(request))
@@ -1162,7 +1161,99 @@ def takeDownMating(request,id):
 	if not request.user.is_authenticated():
 		return HttpResponseRedirect('/login/?next=%s' % request.path)
 	else:
-		return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+		if request.method == 'POST':
+			step = request.POST.get('step')
+			hi = HistoryItem.objects.filter(id=id).get()
+			outCross = True
+			try:
+				if (hi.param_2 == ''):
+					outCross = False
+			except:
+				outCross = False
+			if step == 'Confirmed':
+				# submitting the modification
+				line1barcode = request.POST.get('line1')
+				line2barcode = request.POST.get('line2')
+				barcodeNeeded = request.POST.get('barcode')
+				try:
+					line1 = Line.objects.filter(barcode__exact=line1barcode).get()
+					if (outCross):
+						line2 = Line.objects.filter(barcode__exact=line2barcode).get()
+				except:
+					dict['definesHeader'] = True
+					dict['header'] = "Warning: Line barcode/barcodes not valid"
+					initial = {'step' : 'Confirmed'}
+					dict['form'] = ConfirmLineForm(initial=initial)
+					dict['action_slug'] = "processitem/" + str(id)
+					return render_to_response('form.html', dict, context_instance=RequestContext(request))
+				if (str(line1.id) == str(hi.param_1) and (not outCross or str(line2.id) == str(hi.param_2))):
+					if barcodeNeeded == 'on':
+						initial = {'step' : 'productBarcodeNeeded'}
+						form = EnterBarcodeForm(initial=initial)
+					else:
+						hi.finished = True
+						hi.save()
+						if (outCross):
+							create_HistoryItem('Promote to Euthinize', sm, date.today() + timedelta(days=7), '', False, [line1.id,line2.id])
+						else:
+							create_HistoryItem('Promote to Euthinize', sm, date.today() + timedelta(days=7), '', False, [line1.id])
+						return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+				elif (str(line1.id) == str(hi.param_2) and str(line2.id) == str(hi.param_1)):
+					dict['definesHeader'] = True
+					dict['header'] = "Warning: Lines were entered into field in reverse order, please re-enter information"
+					initial = {'step' : 'Confirmed'}
+					form = ConfirmLineForm(initial=initial)
+				else:
+					dict['definesHeader'] = True
+					dict['header'] = "Warning: Line barcode/barcodes do not match record"
+					initial = {'step' : 'Confirmed'}
+					form = ConfirmLineForm(initial=initial)
+			elif step == 'productBarcodeNeeded':
+				line1 = Line.objects.filter(pk=hi.param_1).get()
+				if (outCross):
+					line2 = Line.objects.filter(pk=hi.param_2).get()
+				barcodeFound = request.POST.get('selected_Barcode')
+				product_Type = ProductType.objects.filter(type__exact='Mating').get()
+				#validate barcodes
+				try:
+						try:
+							barcodeFound = Barcode.objects.filter(pk=barcodeFound).get()
+						except:
+							raise Exception, 'Barcode has not been registered with database'
+						if (barcodeFound.used):
+							raise Exception, 'Barcode already in use'
+				except Exception, ex:
+						dict['definesHeader'] = True
+						dict['header'] = "Error encountered: " + str(ex)
+						initial = {'step' : 'productBarcodeNeeded'}
+						dict['form'] = EnterBarcodeForm(initial=initial)
+						dict['action_slug'] = "processitem/" + str(id)
+						return render_to_response('form.html', dict, context_instance=RequestContext(request))
+				if (outCross):
+					new = Product(barcode=barcodeFound.id, name=line1.name + " : " + line2.name, line_id=line1, line2_id=line2, type=product_Type, active=True, owner=sm)
+				else:
+					new = Product(barcode=barcodeFound.id, name=line1.name + " in-cross", line_id=line1, type=product_Type, active=True, owner=sm)
+				new.save()
+				barcodeFound.used=True
+				barcodeFound.save()
+				hi.finished = True
+				hi.save()
+				create_HistoryItem('Promote to Line', sm, date.today() + timedelta(days=5), '', False, [new.id])
+				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+			else:
+				initial = {'step' : 'Confirmed'}
+				form = ConfirmLineForm(initial=initial)
+		else:
+			# choosing what object to edit	
+			initial = {'step' : 'Confirmed'}
+			form = ConfirmLineForm(initial=initial)
+		dict['form'] = form
+		dict['action_slug'] = "processitem/" + str(id)
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
 
 def viewActiveLines(request):
 	if not request.user.is_authenticated():

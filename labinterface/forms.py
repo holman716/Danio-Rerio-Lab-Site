@@ -22,7 +22,8 @@ class AddLineForm(forms.Form):
 	birthdate = forms.DateField(required=False)
 
 class EnterBarcodeForm(forms.Form):
-	selection = forms.IntegerField()
+	step = forms.CharField(widget=forms.HiddenInput(), required=False)
+	selected_Barcode = forms.IntegerField(help_text="Please enter barcode")
 
 class PrintBarcodeForm(forms.Form):
 	quantity = forms.IntegerField(help_text="How many barcodes will be printed?")
@@ -138,6 +139,12 @@ class SplitLineFinalForm(forms.Form):
 
 class ProcessMatingForm(forms.Form):
 	productId = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+class ConfirmLineForm(forms.Form):
+	step = forms.CharField(widget=forms.HiddenInput(), required=False)
+	line1 = forms.CharField(help_text="Scan the first barcode (or male if out-cross)")
+	line2 = forms.CharField(required=False, help_text="If this is an out-cross scan the female line")
+	barcode = forms.BooleanField(required=False, help_text="Will the mating result receive a barcode?")
 
 class MyRegistrationForm(RegistrationForm):
 	attrs_dict = { 'class': 'required' }

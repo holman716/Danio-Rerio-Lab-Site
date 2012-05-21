@@ -15,14 +15,14 @@ td{
 	margin-left: auto;
 	margin-top: 10px;
 	position: relative;
-	width: 777px;
+	width: 896px;
 	text-align: left;
 	background-color: #FFFFFF;
 }
 #header{
 	background-image: url(images/header.jpg);
 	height: 226px;
-	width: 777px;
+	width: 896px;
 	left: 0px;
 	top: 0px;
 }
@@ -76,7 +76,7 @@ td{
 #content{
 	margin-top: 252px;
 	position: absolute;
-	width: 777px;
+	width: 896px;
 	background-color: #FFFFFF;
 }
 #picture1{
@@ -103,7 +103,7 @@ td{
 }
 #rightside{
 	float: right;
-	width: 600px;
+	width: 700px;
 	background-color: #FFFFFF;
 	margin-right: 15px;
 	margin-top: 20px;
@@ -169,7 +169,7 @@ td{
 	padding: 5px 12px;
 	text-decoration: none;
 	text-align: center;
-	width: 87px;
+	width: 104px;
 	color: #EAFFED;
 	white-space: nowrap}
 
