@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load customFilters %}
+
+{% block content %}
+
+{% if definesHeader %}<h1>{{header}}</h1>{% endif %}
+<p>
+<table border="1" cellpadding="10%" cellspacing="0">
+	<tr>
+		<td><b>Username</b></td>
+		<td><b>First Name</b></td>
+		<td><b>Last Name</b></td>
+		<td><b>Position</b></td>
+		<td><b>Group</b></td>
+		<td><b>Actions</b></td>
+	</tr>
+{% for o in active_users %}
+	<tr>
+		<td>{{ o.user.username }}</td>
+		<td>{{ o.first_name }}</td>
+		<td>{{ o.last_name }}</td>
+		<td>{{ o.position }}</td>
+		<td>{{o.lab_group}}</td>
+		<td><a href="/action/edituser/{{o.id}}">Edit</a></td>
+	</tr>
+{% endfor %}
+</table>
+</p>
+{% endblock %}

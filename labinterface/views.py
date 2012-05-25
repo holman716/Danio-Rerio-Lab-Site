@@ -107,7 +107,7 @@ def editLine(request):
 		dict['first_name'] = sm.first_name
 		dict['actions'] = get_user_allowed_actions(sm)
 		if request.method == 'POST':
-			selection = request.POST.get('selected_Barcode')
+			selection = request.POST.get('selection')
 			if selection is None:
 				# submitting the modification
 				form = AddLineForm(request.POST)
@@ -354,7 +354,7 @@ def editProduct(request):
 		dict['first_name'] = sm.first_name
 		dict['actions'] = get_user_allowed_actions(sm)
 		if request.method == 'POST':
-			selection = request.POST.get('selected_Barcode')
+			selection = request.POST.get('selection')
 			if selection is None:
 				# submitting the modification
 				form = AddProductForm(request.POST)
@@ -1216,7 +1216,7 @@ def takeDownMating(request,id):
 				line1 = Line.objects.filter(pk=hi.param_1).get()
 				if (outCross):
 					line2 = Line.objects.filter(pk=hi.param_2).get()
-				barcodeFound = request.POST.get('selected_Barcode')
+				barcodeFound = request.POST.get('selection')
 				product_Type = ProductType.objects.filter(type__exact='Mating').get()
 				#validate barcodes
 				try:
@@ -1268,6 +1268,37 @@ def viewActiveLines(request):
 		active_fish += Line.objects.filter(active__exact=True).all()
 		active_fish.sort(key=lambda x: x.barcode)
 
+		dict['definesHeader'] = True
+		dict['activeOny'] = True
+		dict['header'] = "Currently active lines"
+		dict['active_fish'] = active_fish
+		
+		return render_to_response('activeLines.html', dict, context_instance=RequestContext(request))
+
+def findLine(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+
+		active_fish = []
+		if request.method == 'POST':
+			filterString = request.POST.get('filterString')
+			active_fish += Line.objects.filter(name__contains=str(filterString)).all()
+			active_fish.sort(key=lambda x: x.barcode)
+			if (filterString == ''):
+				dict['header'] = "No input given: All lines shown"
+			else:
+				dict['header'] = "All lines containing the string '"+filterString + "'"
+		else:
+			dict['header'] = "No input given: All lines shown"
+
+		dict['definesHeader'] = True
+		dict['activeOny'] = True
+		
 		dict['active_fish'] = active_fish
 		
 		return render_to_response('activeLines.html', dict, context_instance=RequestContext(request))
@@ -1289,7 +1320,68 @@ def viewActiveProducts(request):
 		
 		return render_to_response('activeproducts.html', dict, context_instance=RequestContext(request))
 
-def euthinizeLine(request, id):
+def viewUsers(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+		if (not userAllowedHere(sm,'viewusers')):
+			dict['definesHeader'] = True
+			dict['header'] = "I dont think you were supposed to be there"
+			return render_to_response('homepage.html', dict, context_instance=RequestContext(request))
+
+		active_users = []
+		active_users += StaffMember.objects.all()
+		active_users.sort(key=lambda x: x.last_name)
+
+		dict['active_users'] = active_users
+		
+		return render_to_response('userlist.html', dict, context_instance=RequestContext(request))
+
+def editUser(request,id):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+		if (not userAllowedHere(sm,'editusers')):
+			dict['definesHeader'] = True
+			dict['header'] = "I dont think you were supposed to be there"
+			return render_to_response('homepage.html', dict, context_instance=RequestContext(request))
+
+		try:
+			to_edit = StaffMember.objects.filter(pk=id).get()
+		except:
+			dict['definesHeader'] = True
+			dict['header'] = "That person doesn't seem to exist"
+			return render_to_response('homepage.html', dict, context_instance=RequestContext(request))
+		if request.method == 'POST':
+			# submitting the modification
+			form = EditUserForm(request.POST)
+			if form.is_valid():
+				# process form data					
+				to_edit.first_name = form.cleaned_data['first']
+				to_edit.last_name = form.cleaned_data['last']
+				to_edit.position = form.cleaned_data['position']
+				to_edit.lab_group = form.cleaned_data['lab_group']
+				to_edit.save()
+				to_edit.user.username = form.cleaned_data['user']
+				to_edit.user.save()
+				create_HistoryItem('Edit User', sm, False, '', True, [to_edit.id])
+				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+		else:
+			# bringing up the edit page
+			initial = {'user': to_edit.user.username, 'first': to_edit.first_name,'last': to_edit.last_name, 'position': to_edit.position,'lab_group': to_edit.lab_group}
+			dict['action_slug'] = "edituser/"+str(id)
+			dict['form'] = EditUserForm(initial=initial)		
+			return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+def euthanizeLine(request, id):
 	if not request.user.is_authenticated():
 		return HttpResponseRedirect('/login/?next=%s' % request.path)
 	else:
@@ -1298,10 +1390,10 @@ def euthinizeLine(request, id):
 		dict['id'] = id
 		dict['first_name'] = sm.first_name
 		dict['actions'] = get_user_allowed_actions(sm)
-		obj = Line.objects.filter(barcode=id).get()
+		obj = Line.objects.filter(barcode__exact=id).get()
 		if request.method == 'POST':
 			barcode = request.POST.get('selection')
-			if (barcode == id):
+			if (str(barcode) == str(id)):
 				new = Line.objects.filter(barcode__exact=barcode).get()
 				new.active = False
 				new.save()
@@ -1311,12 +1403,16 @@ def euthinizeLine(request, id):
 				dict['definesHeader'] = True
 				dict['header'] = "Error encountered: Barcode not valid"
 				dict['form'] = EnterBarcodeForm()
-				dict['action_slug'] = "euthinizeline/"+ str(id)
+				dict['action_slug'] = "euthanizeline/"+ str(id)
 				return render_to_response('form.html', dict, context_instance=RequestContext(request))
 		else:
+			dict['definesHeader'] = True
+			dict['header'] = "Enter barcode of fish to be euthanized"
+			dict['definesSubButton'] = True
+			dict['subButton'] = "Confirm"
 			form = EnterBarcodeForm()
 		dict['form'] = form
-		dict['action_slug'] = "euthinizeline/"+ str(id)
+		dict['action_slug'] = "euthanizeline/"+ str(id)
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
 
 ##############
@@ -1326,13 +1422,14 @@ def euthinizeLine(request, id):
 ##############
 def show_user_menu(request):
 	if not request.user.is_authenticated():
-		return render_to_response('homepage.html')
+		dict = locals()
+		return render_to_response('homepage.html', dict, context_instance=RequestContext(request))
 	else:
 		dict = locals()
 		sm = StaffMember.objects.get(user=dict['request'].user)
 		dict['first_name'] = sm.first_name
 		dict['actions'] = get_user_allowed_actions(sm)
-		return render_to_response('homepage.html', dict)
+		return render_to_response('homepage.html', dict, context_instance=RequestContext(request))
 
 def create_HistoryItem(action, user, due, instructions, finished, params):
 	dict = locals()
@@ -1376,21 +1473,24 @@ def create_request(request):
 	h = HistoryItem(action=a, reqd_by=rb, reqd_instructions=reqd_ins, param_1=p1, param_2=p2, param_3=p3, param_4=p4, param_5=p5, param_6=p6)
 	h.save()
 	return render_to_response('login.html')
-	
-def get_user_allowed_actions(sm):
+
+def get_flat_user_allowed_actions(sm):
 	# get all user specific permissions
 	permissions = []
 	permissions += sm.permissions.all()
 	# get the permissions for all groups the user is in
-	groups = sm.lab_groups.all()
-	for group in groups:
-		permissions += group.permissions.all()
+	group = sm.lab_group
+	permissions += group.permissions.all()
 	
 	# get the actions associated with those permissions
 	actions = []
 	for permission in permissions:
 		actions += permission.actions.all()
 	actions = list(set(actions))
+	return actions
+	
+def get_user_allowed_actions(sm):
+	actions = get_flat_user_allowed_actions(sm)
 	categories = []
 	lineActions = []
 	productActions = []
@@ -1411,6 +1511,13 @@ def get_user_allowed_actions(sm):
 	categories = {'01Line':lineActions,'02Product':productActions,'03Genome':genomeActions,'04General':generalActions,'05Admin':adminActions}
 
 	return categories
+
+def userAllowedHere(sm, action):
+	actions = get_flat_user_allowed_actions(sm)
+	for x in actions:
+		if (x.slug == action):
+			return True
+	return False
 	
 register = template.Library()
 

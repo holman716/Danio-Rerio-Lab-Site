@@ -66,7 +66,7 @@ class StaffMember(models.Model):
 	
 	position = models.CharField(max_length=128, blank=True)
 	permissions = models.ManyToManyField('Permission', blank=True, null=True)
-	lab_groups = models.ManyToManyField('LabGroup', blank=True, null=True)
+	lab_group = models.ForeignKey('LabGroup', blank=True, null=True)
 	IACUC_numbers = models.ManyToManyField('IACUC_ids', null=True)
 
 	class Meta:

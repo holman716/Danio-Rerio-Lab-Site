@@ -17,15 +17,19 @@ urlpatterns = patterns('',
 	url(r'^history$',  historyTable, name="viewhistory"),
 	url(r'^action/processitem/(?P<id>\w+)/$', processHistory, name="processhistory"),
 
+	url(r'^action/viewusers/$', viewUsers, name="viewusers"),
+	url(r'^action/edituser/(?P<id>\w+)/$', editUser, name="edituser"),
+
 	url(r'^activelines$',  viewActiveLines, name="viewactivelines"),
 	url(r'^activeproducts$',  viewActiveProducts, name="viewactiveproducts"),
 	
 	url(r'^action/addline/$', addLine, name="addline"),
 	url(r'^action/editline/$', editLine, name="editline"),
 	url(r'^action/editline/(?P<id>\w+)/$', editLineByBarcode, name="editline"),
-	url(r'^action/euthinizeline/(?P<id>\w+)/$', euthinizeLine, name="editline"),
+	url(r'^action/euthanizeline/(?P<id>\w+)/$', euthanizeLine, name="editline"),
 	url(r'^action/viewitem/$', viewItemRedirect, name="viewitem"),
 	url(r'^action/viewline/(?P<id>\w+)/$', viewLine, name="viewline"),
+	url(r'^action/findline/$', findLine, name="findline"),
 	
 	url(r'^action/addproducttype/$', addProductType, name="addproducttype"),
 	url(r'^action/editproducttype/$', editProductType, name="editproducttype"),

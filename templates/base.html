@@ -104,6 +104,15 @@ document.onclick = jsddm_close;
 				{% endfor %}
 				
 				{% endblock %}
+				
+				Find Line with name:
+				<form action="/action/findline/" method="post">
+				{% csrf_token %}
+					<input type="text" name="filterString" /></p>
+					<p><input name="submit" type="submit" value="Find" /></p>
+				</form>
+				
+				
 			{% else %}
 				<p>Main Menu:</p>
 				<p><a href="/">Home</a></p>

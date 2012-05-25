@@ -15,17 +15,17 @@
 
 {% block content %}
 
-<h1> Currently active lines </h1>
+{% if definesHeader %}<h1>{{header}}</h1>{% endif %}
 <p>
 <table border="1" cellpadding="10%" cellspacing="0">
 	<tr>
 		<td><b>Barcode</b></td>
-		<td>Name</td>
-		<td>Current Quantity</td>
-		<td>Location</td>
-		<td>Strain</td>
-		<td>Sex</td>
-		<td>Actions</td>
+		<td><b>Name</b></td>
+		<td><b>Current Quantity</b></td>
+		<td><b>Location</b></td>
+		<td><b>Strain</b></td>
+		<td><b>Sex</b></td>
+		<td><b>Actions</b></td>
 	</tr>
 {% for o in active_fish %}
 	<tr>
@@ -35,12 +35,14 @@
 		<td>{{ o.location }}</td>
 		<td>{{ o.strain }}</td>
 		<td>{{ o.sex }}</td>
+		{% if activeOnly or o.active %}
 		<td>
 			<a href="/action/editline/{{o.barcode}}"><img src="{{ STATIC_URL }}images/editButton.png"></a>
 			<a href="/action/splitline/{{o.barcode}}"><img src="{{ STATIC_URL }}images/splitButton.png"></a>
 			<a href="/action/addmating"><img src="{{ STATIC_URL }}images/matingButton.png"></a>
-			<a href="/action/euthinizeline/{{o.barcode}}"><img src="{{ STATIC_URL }}images/euthinizeButton.png"></a>
+			<a href="/action/euthanizeline/{{o.barcode}}"><img src="{{ STATIC_URL }}images/euthanizeButton.png"></a>
 		</td>
+		{% else %}<td>(Inactive)</td> {% endif %}
 	</tr>
 {% endfor %}
 </table>

@@ -18,6 +18,8 @@
         </p>
 		{% endif %}
     {% endfor %}
-    <p><input name="submit" type="submit" value="Submit" /></p>
+	{% if definesSubButton %}<p><input name="submit" type="submit" value="{{subButton}}" /></p>
+    {% else %}<p><input name="submit" type="submit" value="Submit" /></p>
+	{% endif %}
 </form>
 {% endblock %}

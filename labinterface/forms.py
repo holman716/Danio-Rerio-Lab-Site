@@ -23,7 +23,7 @@ class AddLineForm(forms.Form):
 
 class EnterBarcodeForm(forms.Form):
 	step = forms.CharField(widget=forms.HiddenInput(), required=False)
-	selected_Barcode = forms.IntegerField(help_text="Please enter barcode")
+	selection = forms.IntegerField(label='Selected Barcode',help_text="Please enter barcode")
 
 class PrintBarcodeForm(forms.Form):
 	quantity = forms.IntegerField(help_text="How many barcodes will be printed?")
@@ -145,6 +145,13 @@ class ConfirmLineForm(forms.Form):
 	line1 = forms.CharField(help_text="Scan the first barcode (or male if out-cross)")
 	line2 = forms.CharField(required=False, help_text="If this is an out-cross scan the female line")
 	barcode = forms.BooleanField(required=False, help_text="Will the mating result receive a barcode?")
+
+class EditUserForm(forms.Form):
+	user = forms.CharField(label="Username")
+	first = forms.CharField(label="First Name")
+	last = forms.CharField(label="Last Name")
+	position = forms.CharField(label="Last Name")
+	lab_group = forms.ModelChoiceField(queryset=LabGroup.objects.all(), label="Lab Group")
 
 class MyRegistrationForm(RegistrationForm):
 	attrs_dict = { 'class': 'required' }
