@@ -58,7 +58,7 @@ MEDIA_URL = ''
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = os.path.join(PROJECT_DIR,'staticfiles/')
+STATIC_ROOT = os.path.join(PROJECT_PATH,'staticfiles/')
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
@@ -71,7 +71,7 @@ ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-	os.path.join(PROJECT_ROOT,'static/'),
+	os.path.join(PROJECT_PATH,'static/'),
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
