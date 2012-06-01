@@ -127,6 +127,7 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'fish.labinterface',
 	'registration',
+	'gunicorn',
 )
 
 AUTH_PROFILE_MODULE = 'fish.labinterface.StaffMember'
