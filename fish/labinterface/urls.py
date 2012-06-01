@@ -13,7 +13,7 @@ urlpatterns = patterns('',
 	
 	url(r'^$',  show_user_menu, name="index"),
 	url(r'^error$',  show_user_menu, name="index"),
-	url(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT})
+	url(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
 
 	url(r'^history$',  historyTable, name="viewhistory"),
 	url(r'^action/processitem/(?P<id>\w+)/$', processHistory, name="processhistory"),
