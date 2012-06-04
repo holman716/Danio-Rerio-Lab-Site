@@ -1273,7 +1273,7 @@ def viewActiveLines(request):
 		dict['header'] = "Currently active lines"
 		dict['active_fish'] = active_fish
 		
-		return render_to_response('activeLines.html', dict, context_instance=RequestContext(request))
+		return render_to_response('activelines.html', dict, context_instance=RequestContext(request))
 
 def findLine(request):
 	if not request.user.is_authenticated():
@@ -1301,7 +1301,7 @@ def findLine(request):
 		
 		dict['active_fish'] = active_fish
 		
-		return render_to_response('activeLines.html', dict, context_instance=RequestContext(request))
+		return render_to_response('activelines.html', dict, context_instance=RequestContext(request))
 
 def viewActiveProducts(request):
 	if not request.user.is_authenticated():
