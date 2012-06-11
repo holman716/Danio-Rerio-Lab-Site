@@ -72,4 +72,5 @@ class CustomRegistrationBackend(object):
 		newMember = StaffMember.objects.filter(user_id__exact=user.pk).get()
 		labGroup = LabGroup.objects.filter(pk=1).get()
 		newMember.lab_group = labGroup
+		newMember.save()
 		return ('registration_activation_complete', (), {})
