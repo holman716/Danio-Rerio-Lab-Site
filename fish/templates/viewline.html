@@ -31,6 +31,15 @@
     <li>No children.</li>
 {% endfor %}
 </ul>
+<br /><br/>
+<p><b>Genomes</b>:</p>
+<ul>
+{% for gene in genomes %}
+<li>{{ gene }}  <font size=1>(<a href="/action/removegenomeassociation/{{ id }}&{{ gene.id }}">Remove?</a>)</font></li>
+{% empty %}
+    <li>No genomes.</li>
+{% endfor %}
+</ul>
 
 <br /><br/>
 <p><b>Actions</b>:</p>

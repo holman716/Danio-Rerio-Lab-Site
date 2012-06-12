@@ -8,7 +8,7 @@ class AddLineForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
 	barcode = forms.IntegerField()
 	name = forms.CharField()
-	IACUC_ID = forms.CharField()
+	IACUC_ID = forms.CharField(label='Line Number')
 	parent = forms.ModelChoiceField(queryset=Line.objects.all(), empty_label="(No Parent)", required=False)
 	raised = forms.BooleanField(required=False)
 	current_quantity = forms.IntegerField()
@@ -17,13 +17,16 @@ class AddLineForm(forms.Form):
 	container = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label="(Unknown)", required=False)
 	sex = forms.ChoiceField(choices=Line.SEX_CHOICES)
 	strain = forms.CharField(required=False)
-	active = forms.BooleanField(required=False)
+	active = forms.BooleanField(required=False, initial=True)
 	owner = forms.ModelChoiceField(queryset=StaffMember.objects.all(), )
 	birthdate = forms.DateField(required=False)
 
 class EnterBarcodeForm(forms.Form):
 	step = forms.CharField(widget=forms.HiddenInput(), required=False)
 	selection = forms.IntegerField(label='Selected Barcode',help_text="Please enter barcode")
+
+class ConfirmActionForm(forms.Form):
+	selection =  forms.BooleanField(help_text='Are you sure you want to do this?', label='I\'m sure')
 
 class PrintBarcodeForm(forms.Form):
 	quantity = forms.IntegerField(help_text="How many barcodes will be printed?")
@@ -43,7 +46,7 @@ class AddProductForm(forms.Form):
 	line2 = forms.IntegerField()
 	type = forms.ModelChoiceField(queryset=ProductType.objects.all(), empty_label=None)
 	container = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label=None)
-	active = forms.BooleanField(required=False)
+	active = forms.BooleanField(required=False, initial=True)
 	owner = forms.ModelChoiceField(queryset=StaffMember.objects.all(), empty_label=None)
 
 
@@ -64,6 +67,23 @@ class AddGenomeVersionForm(forms.Form):
 
 class SelectGenomeVersionForm(forms.Form):
 	selection = forms.ModelChoiceField(queryset=Genome_version.objects.all(), empty_label=None)
+
+class AddReagentForm(forms.Form):
+	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
+	description = forms.CharField()
+	container = forms.ModelChoiceField(queryset=Container.objects.all(), empty_label=None, required=False)
+
+class SelectReagentForm(forms.Form):
+	selection = forms.ModelChoiceField(queryset=Reagent.objects.all(), empty_label=None)
+
+class AddContainerForm(forms.Form):
+	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
+	description = forms.CharField()
+	type = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label=None)
+	container = forms.ModelChoiceField(queryset=Container.objects.all(), empty_label="-----", required=False)
+
+class SelectContainerForm(forms.Form):
+	selection = forms.ModelChoiceField(queryset=Container.objects.all(), empty_label=None)
 
 class AddContainerTypeForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
@@ -113,7 +133,7 @@ class SplitLineSinglesForm(forms.Form):
 	first_product_Barcode = forms.IntegerField(help_text="What is the first product barcode in the series? If the barcodes are not in order please use groups option and scan in each barcode one at a time.")
 	location = forms.CharField(help_text="Where will the lines be stored?")
 	container = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label="(Unknown)", required=False, help_text="What container types will the lines be stored in?")
-	active = forms.BooleanField(help_text="Are the groups active?")
+	active = forms.BooleanField(help_text="Are the groups active?", initial=True)
 
 class SplitLineGroupsForm(forms.Form):
 	groupNum = forms.IntegerField(widget=forms.HiddenInput(), required=False)
@@ -126,7 +146,7 @@ class SplitLineGroupsForm(forms.Form):
 	product_Barcode = forms.IntegerField(help_text="What is the barcode associated with this product?")
 	location = forms.CharField(help_text="Where will the line group be stored?")
 	container = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label="(Unknown)", required=False, help_text="What container will the line group be stored in?")
-	active = forms.BooleanField(required=False, help_text="Is the line group active?")
+	active = forms.BooleanField(required=False, help_text="Is the line group active?", initial=True)
 	final = forms.BooleanField(required=False, help_text="Is this the last group to enter?")
 
 class SplitLineFinalForm(forms.Form):
@@ -135,7 +155,7 @@ class SplitLineFinalForm(forms.Form):
 	current_quantity = forms.IntegerField(help_text="How many fish are left?")
 	location = forms.CharField(help_text="Where will the old line be stored?")
 	container = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label="(Unknown)", required=False, help_text="What container will now house the old line?")
-	active = forms.BooleanField(required=False, help_text="Is the line still active?")
+	active = forms.BooleanField(required=False, help_text="Is the line still active?", initial=True)
 
 class ProcessMatingForm(forms.Form):
 	productId = forms.CharField(widget=forms.HiddenInput(), required=False)

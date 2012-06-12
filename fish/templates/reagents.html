@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load customFilters %}
+
+{% block content %}
+<h1> Reagents </h1>
+<p>
+<table border="1" cellpadding="10%" cellspacing="0">
+	<tr>
+		<td><b>Description</b></td>
+		<td><b>Container</b></td>
+	</tr>
+{% for o in reagent_table %}
+	<tr>
+		<td>{{ o.description }}</td>
+		<td>{{ o.container }}</td>
+	</tr>
+{% endfor %}
+</table>
+</p>
+
+<hr>
+
+<h1> Container </h1>
+<p>
+<table border="1" cellpadding="10%" cellspacing="0">
+	<tr>
+		<td><b>Description</b></td>
+		<td><b>Type</b></td>
+		<td><b>Contained In</b></td>
+	</tr>
+{% for o in container_table %}
+	<tr>
+		<td>{{ o.description }}</td>
+		<td>{{ o.type }}</td>
+		<td>{%if o.containedIn == None%}---{%else%}{{ o.containedIn }}{%endif%}</td>
+	</tr>
+{% endfor %}
+</table>
+</p>
+
+{% endblock %}

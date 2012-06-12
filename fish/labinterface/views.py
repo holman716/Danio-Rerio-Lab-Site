@@ -223,6 +223,7 @@ def viewLine(request, id):
 		dict['sex'] = obj.sex
 		dict['active'] = obj.active
 		dict['products'] = Product.objects.filter(line_id=obj)
+		dict['genomes'] = obj.genomes.all()
 		dict['children'] = Line.objects.filter(parent=obj)
 		
 		return render_to_response('viewline.html', dict, context_instance=RequestContext(request))
@@ -605,6 +606,141 @@ def editGenomeVersion(request):
 		dict['action_slug'] = "editgenomeversion"
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
 
+def addReagent(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			form = AddReagentForm(request.POST)
+			if form.is_valid():
+				# process form data
+				description = form.cleaned_data['description']
+				container = form.cleaned_data['container']
+			
+				newreagent = {}
+				if container == None:
+					newreagent = Reagent(description=description)
+				else:
+					newreagent = Reagent(description=description, container=container)
+				newreagent.save()
+				create_HistoryItem('Add Reagent', sm, False, '', True, [newreagent.id])
+				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+		else:
+			form = AddReagentForm()
+		dict['form'] = form
+		dict['action_slug'] = "addreagent"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+		
+def editReagent(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			selection = request.POST.get('selection')
+			if selection is None:
+				# submitting the modification
+				form = AddReagentForm(request.POST)
+				if form.is_valid():
+					# process form data
+					pk = form.cleaned_data['pk']
+					description = form.cleaned_data['description']
+					container = form.cleaned_data['container']
+
+					new = Reagent.objects.filter(pk=pk).get()
+					new.description = description
+					new.container = container
+					new.save()
+					create_HistoryItem('Edit Reagent', sm, False, '', True, [new.id])
+					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+			else:
+				# bringing up the edit page
+				to_edit = Reagent.objects.filter(pk=selection).get()
+				initial = {'pk': to_edit.pk,'description': to_edit.description,'container': to_edit.container}
+				form = AddReagentForm(initial=initial)
+		else:
+			# choosing what object to edit
+			form = SelectReagentForm()
+		dict['form'] = form
+		dict['action_slug'] = "editreagent"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+def addContainer(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			form = AddContainerForm(request.POST)
+			if form.is_valid():
+				# process form data
+				description = form.cleaned_data['description']
+				type = form.cleaned_data['type']
+				container = form.cleaned_data['container']
+			
+				newcontainer = {}
+				if container == None:
+					newcontainer = Container(description=description, type=type)
+				else:
+					newcontainer = Container(description=description, type=type, containedIn=container)
+				newcontainer.save()
+				create_HistoryItem('Add Container', sm, False, '', True, [newcontainer.id])
+				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+		else:
+			form = AddContainerForm()
+		dict['form'] = form
+		dict['action_slug'] = "addcontainer"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+		
+def editContainer(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			selection = request.POST.get('selection')
+			if selection is None:
+				# submitting the modification
+				form = AddContainerForm(request.POST)
+				if form.is_valid():
+					# process form data
+					pk = form.cleaned_data['pk']
+					description = form.cleaned_data['description']
+					type = form.cleaned_data['type']
+					container = form.cleaned_data['container']
+
+					new = Container.objects.filter(pk=pk).get()
+					new.description = description
+					new.type = type
+					new.containedIn = container
+					new.save()
+					create_HistoryItem('Edit Container', sm, False, '', True, [new.id])
+					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+			else:
+				# bringing up the edit page
+				to_edit = Container.objects.filter(pk=selection).get()
+				initial = {'pk': to_edit.pk,'description': to_edit.description,'type': to_edit.type,'container': to_edit.containedIn}
+				form = AddContainerForm(initial=initial)
+		else:
+			# choosing what object to edit
+			form = SelectContainerForm()
+		dict['form'] = form
+		dict['action_slug'] = "editcontainer"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
 def addContainerType(request):
 	if not request.user.is_authenticated():
 		return HttpResponseRedirect('/login/?next=%s' % request.path)
@@ -622,12 +758,12 @@ def addContainerType(request):
 				newcontainer = {}
 				newcontainer = Container_types(type=type)
 				newcontainer.save()
-				create_HistoryItem('Add Container', sm, False, '', True, [newcontainer.id])
+				create_HistoryItem('Add Container Type', sm, False, '', True, [newcontainer.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			form = AddContainerTypeForm()
 		dict['form'] = form
-		dict['action_slug'] = "addcontainer"
+		dict['action_slug'] = "addcontainertype"
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
 		
 def editContainerType(request):
@@ -650,7 +786,7 @@ def editContainerType(request):
 					oldType = new.type
 					new.type = form.cleaned_data['type']
 					new.save()
-					create_HistoryItem('Edit Container', sm, False, oldType+' -> '+new.type, True, [new.id])
+					create_HistoryItem('Edit Container Type', sm, False, oldType+' -> '+new.type, True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 			else:
 				# bringing up the edit page
@@ -661,7 +797,7 @@ def editContainerType(request):
 			# choosing what object to edit
 			form = SelectContainerTypeForm()
 		dict['form'] = form
-		dict['action_slug'] = "editcontainer"
+		dict['action_slug'] = "editcontainertype"
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
 
 def addAlleleType(request):
@@ -821,6 +957,52 @@ def addGenomeAssociation(request):
 			form = AddGenomeAssociationForm()
 		dict['form'] = form
 		dict['action_slug'] = "addgenomeassociation"
+		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+def removeGenomeAssociation(request, line, genome):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['first_name'] = sm.first_name
+		dict['actions'] = get_user_allowed_actions(sm)
+		if request.method == 'POST':
+			# process form data
+			confirmed = request.POST.get('selection') == 'on'
+			if confirmed:
+				lineObject = Line.objects.filter(barcode__exact=line).get()
+				for x in lineObject.genomes.all():
+					if str(x.id) == str(genome):
+						genomeObject=x
+				lineObject.genomes.remove(genomeObject)
+				lineObject.save()
+				create_HistoryItem('Remove Genome Association', sm, False, '', True, [lineObject.id])
+				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
+			else:
+				dict['definesHeader'] = True
+				dict['header'] = "Genome not removed"
+				return render_to_response('message.html', dict, context_instance=RequestContext(request))
+		else:
+			try:
+				valid = False
+				lineObject = Line.objects.filter(barcode__exact=line).get()
+				for x in lineObject.genomes.all():
+					if str(x.id) == str(genome):
+						genomeObject=x
+						valid = True
+			except:
+				valid = False
+			if valid:
+				dict['definesHeader'] = True
+				dict['header'] = "Removing \"" + str(genomeObject) + "\" from \"" + lineObject.name + "\"?"
+				form = ConfirmActionForm()
+			else:
+				dict['definesHeader'] = True
+				dict['header'] = "Invalid line/genome pair"
+				return render_to_response('message.html', dict, context_instance=RequestContext(request))
+		dict['form'] = form
+		dict['action_slug'] = "removegenomeassociation/" + str(line) + "&" + str(genome)
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
 
 def splitLineInitial(request, id):
@@ -1107,11 +1289,11 @@ def addMating(request):
 			dueDate = date.today() + timedelta(days=1)
 
 			if (line2 == None):
-				create_HistoryItem('Add Mating', sm, False, 'Added in-cross', True, [line.id])
-				create_HistoryItem('Take Down Mating', sm, dueDate, 'Take down mating', False, [line.id])
+				create_HistoryItem('Add Mating', sm, False, 'Added in-cross; '+line.name, True, [line.id])
+				create_HistoryItem('Take Down Mating', sm, dueDate, 'Take down mating; '+line.name, False, [line.id])
 			else:
-				create_HistoryItem('Add Mating', sm, False, 'Added out-cross', True, [line.id,line2.id])
-				create_HistoryItem('Take Down Mating', sm, dueDate, 'Take down mating', False, [line.id,line2.id])
+				create_HistoryItem('Add Mating', sm, False, 'Added out-cross; '+line.name+' x '+line2.name, True, [line.id,line2.id])
+				create_HistoryItem('Take Down Mating', sm, dueDate, 'Take down mating; '+line.name+' x '+line2.name, False, [line.id,line2.id])
 			return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:
 			dict['action_slug'] = "addmating"
@@ -1131,12 +1313,31 @@ def historyTable(request):
 		todoHistory.sort(key=lambda x: x.reqd_date)
 		finishedHistory = []
 		finishedHistory += HistoryItem.objects.filter(finished__exact=True).all()
-		finishedHistory.sort(key=lambda x: x.reqd_date)
+		finishedHistory.sort(key=lambda x: x.reqd_date, reverse=True)
 
 		dict['todo_table'] = todoHistory
 		dict['finished_table'] = finishedHistory
 		
 		return render_to_response('history.html', dict, context_instance=RequestContext(request))
+
+def reagentTable(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+
+		reagents = []
+		reagents += Reagent.objects.all()
+		containers = []
+		containers += Container.objects.all()
+
+		dict['reagent_table'] = reagents
+		dict['container_table'] = containers
+		
+		return render_to_response('reagents.html', dict, context_instance=RequestContext(request))
 
 ###### TODO ######
 def processHistory(request,id):
@@ -1254,6 +1455,26 @@ def takeDownMating(request,id):
 		dict['form'] = form
 		dict['action_slug'] = "processitem/" + str(id)
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+def viewMyLines(request):
+	if not request.user.is_authenticated():
+		return HttpResponseRedirect('/login/?next=%s' % request.path)
+	else:
+		dict = locals()
+		sm = StaffMember.objects.get(user=dict['request'].user)
+		dict['actions'] = get_user_allowed_actions(sm)
+		dict['first_name'] = sm.first_name
+
+		active_fish = []
+		active_fish += Line.objects.filter(owner__exact=sm).all()
+		active_fish.sort(key=lambda x: x.barcode)
+
+		dict['definesHeader'] = True
+		dict['activeOny'] = True
+		dict['header'] = str(sm) + "'s lines"
+		dict['active_fish'] = active_fish
+		
+		return render_to_response('activelines.html', dict, context_instance=RequestContext(request))
 
 def viewActiveLines(request):
 	if not request.user.is_authenticated():

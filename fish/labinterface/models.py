@@ -109,11 +109,11 @@ class Line(models.Model):
 	location = models.CharField(max_length=128, blank=True)
 	strain = models.CharField(max_length=128, blank=True)
 	SEX_CHOICES = (
+		('B', 'Both'),
 		('M', 'Male'),
 		('F', 'Female'),
 		('U', 'Unknown'),
 		('N', 'None'),
-		('B', 'Both'),
 	)
 	sex = models.CharField(max_length=1, choices=SEX_CHOICES, default='U')
 	active = models.BooleanField()
@@ -133,6 +133,23 @@ class IACUC_ids(models.Model):
 
 	def __unicode__(self):
 		return self.IACUC_number
+
+class Reagent(models.Model):
+	id = models.AutoField(primary_key=True)
+	description = models.CharField(max_length=200, blank=True)
+	container = models.ForeignKey('Container', null=True)
+
+	def __unicode__(self):
+		return self.description
+
+class Container(models.Model):
+	id = models.AutoField(primary_key=True)
+	description = models.CharField(max_length=200, blank=True)
+	type = models.ForeignKey('Container_types', null=True)
+	containedIn = models.ForeignKey('self', null=True)
+
+	def __unicode__(self):
+		return self.description
 
 class Container_types(models.Model):
 	id = models.AutoField(primary_key=True)

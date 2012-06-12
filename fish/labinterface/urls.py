@@ -17,10 +17,12 @@ urlpatterns = patterns('',
 
 	url(r'^history$',  historyTable, name="viewhistory"),
 	url(r'^action/processitem/(?P<id>\w+)/$', processHistory, name="processhistory"),
+	url(r'^reagents$',  reagentTable, name="viewreagents"),
 
 	url(r'^action/viewusers/$', viewUsers, name="viewusers"),
 	url(r'^action/edituser/(?P<id>\w+)/$', editUser, name="edituser"),
 
+	url(r'^mylines$',  viewMyLines, name="viewmylines"),
 	url(r'^activelines$',  viewActiveLines, name="viewactivelines"),
 	url(r'^activeproducts$',  viewActiveProducts, name="viewactiveproducts"),
 	
@@ -44,12 +46,17 @@ urlpatterns = patterns('',
 	url(r'^action/viewgenome/(?P<id>\w+)/$', viewGenome, name="viewgenome"),
 
 	url(r'^action/addgenomeassociation/$', addGenomeAssociation, name="addgenomeassociation"),
+	url(r'^action/removegenomeassociation/(?P<line>\w+)&(?P<genome>\w+)/$', removeGenomeAssociation, name="removegenomeassociation"),
 
 	url(r'^action/addgenomeversion/$', addGenomeVersion, name="addgenomeversion"),
 	url(r'^action/editgenomeversion/$', editGenomeVersion, name="editgenomeversion"),
 
-	url(r'^action/addcontainer/$', addContainerType, name="addcontainer"),
-	url(r'^action/editcontainer/$', editContainerType, name="editcontainer"),
+	url(r'^action/addreagent/$', addReagent, name="addreagent"),
+	url(r'^action/editreagent/$', editReagent, name="editreagent"),
+	url(r'^action/addcontainer/$', addContainer, name="addcontainer"),
+	url(r'^action/editcontainer/$', editContainer, name="editcontainer"),
+	url(r'^action/addcontainertype/$', addContainerType, name="addcontainertype"),
+	url(r'^action/editcontainertype/$', editContainerType, name="editcontainertype"),
 
 	url(r'^action/addalleletype/$', addAlleleType, name="addalleletype"),
 	url(r'^action/editalleletype/$', editAlleleType, name="editalleletype"),

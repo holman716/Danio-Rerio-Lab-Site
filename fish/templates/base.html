@@ -87,13 +87,15 @@ document.onclick = jsddm_close;
 				<p><a href="/logout/">Logout</a></p>
 				<br />
 				<p><a href="/history">View History</a></p>
+				<p><a href="/reagents">View Reagents</a></p>
+				<p><a href="/mylines">My Lines</a></p>
 				<p><a href="/activelines">Active Lines</a></p>
 				<p><a href="/activeproducts">Active Products</a></p>
 				<br />
 				{% block sidebar %}
 				
 				{% for category, actionList in actions.items %}
-				{% if category|removePrefixNumber == 'General' or category|removePrefixNumber == 'Admin' %}
+				{% if category|removePrefixNumber == 'General' or category|removePrefixNumber == 'Admin' or category|removePrefixNumber == 'Genome' %}
 				{% if actionList %}
 				{{ category|removePrefixNumber }}:
 				{% for o in actionList %}
