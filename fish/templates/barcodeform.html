@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+{% if definesHeader %}<p><b>{{header}}</b></p>{% endif %}
+<p><b>Add barcodes</b></p>
+<form action="/action/{{ action_slug }}/" method="post">
+{% csrf_token %}
+    {% for field in form %}
+		{% if field.is_hidden %}
+			{{ field }}
+		{% else %}
+		<p>
+            {{ field.errors }}
+			{% if field.help_text != '' %}
+			{{ field.help_text }}<br>
+			{% endif %}
+            {{ field.label_tag }}: {{ field }}
+        </p>
+		{% endif %}
+    {% endfor %}
+	{% if definesSubButton %}<p><input name="submit" type="submit" value="{{subButton}}" /></p>
+    {% else %}<p><input name="submit" type="submit" value="Submit" /></p>
+	{% endif %}
+</form>
+<p><br></p>
+<hr>
+<br>
+<p><b>Available barcodes</b></p>
+<p>Number of barcodes: {{number}}
+<br>First barcode: {{minimum}}
+<br>Last Barcode: {{maximum}}</p>
+
+<p><table border=1 cellspacing=0><tr>{% for number in available %}
+</td>{% if forloop.counter0|divisibleby:20 %}</tr><tr>{%endif%}<td>{{number}}
+{% endfor %}</td></tr></table>
+{% endblock %}

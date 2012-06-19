@@ -177,14 +177,14 @@ class Product(models.Model):
 		
 class GeneticElement(models.Model):
 	id = models.AutoField(primary_key=True)
+	name = models.CharField(max_length=200)
 	version = models.ForeignKey('Genome_version')
 	chromosome = models.CharField(max_length=128)
 	position = models.BigIntegerField(null=True)
-	insert_name = models.ForeignKey('Insert_name', null=True)
 	allele_type = models.ForeignKey('Allele_type')
 
 	def __unicode__(self):
-		return self.chromosome + ' - ' + str(self.position)
+		return self.name
 
 class Genome_version(models.Model):
 	id = models.AutoField(primary_key=True)
@@ -205,6 +205,7 @@ class Insert_name(models.Model):
 
 class Allele_type(models.Model):
 	id = models.AutoField(primary_key=True)
+	description = models.CharField(max_length=200)
 	TYPE_CHOICES = (
 		 ('insertion','insertion'),
 		 ('deletion','deletion'),
@@ -214,15 +215,17 @@ class Allele_type(models.Model):
 		 ('?>C','?>C'),
 	)
 	type = models.CharField(max_length=128)
-	size = models.IntegerField()
+	size = models.IntegerField(null=True)
 	ORIENTATION_CHOICES = (
+		('None', 'None'),
 		('+', '+'),
 		('-', '-')
 	)
-	orientation = models.CharField(max_length=1, choices=ORIENTATION_CHOICES, default='+')
+	orientation = models.CharField(max_length=1, choices=ORIENTATION_CHOICES, default='+', null=True)
+	insert_name = models.ForeignKey('Insert_name', null=True)
 
 	def __unicode__(self):
-		return self.type + self.orientation + ': ' + str(self.size)
+		return self.description
 
 class ProductType(models.Model):
 	id = models.AutoField(primary_key=True)

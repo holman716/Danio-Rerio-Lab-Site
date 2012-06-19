@@ -10,6 +10,7 @@ from django import template
 from django.db.models import Max
 
 import urllib
+import csv
 from django.template.defaultfilters import stringfilter
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
@@ -301,9 +302,12 @@ def addProduct(request):
 				barcode = form.cleaned_data['barcode']
 				name = form.cleaned_data['name']
 				linecode = form.cleaned_data['line']
-				line2code = form.cleaned_data['line2']
+				line2code = form.cleaned_data['line2'] or None
 				line = Line.objects.filter(barcode__exact=linecode).get()
-				line2 = Line.objects.filter(barcode__exact=line2code).get()
+				if (line2code):
+					line2 = Line.objects.filter(barcode__exact=line2code).get()
+				else:
+					line2 = None
 				type = form.cleaned_data['type']
 				container = form.cleaned_data['container']
 				active = form.cleaned_data['active']
@@ -474,14 +478,14 @@ def addGenome(request):
 			form = AddGenomeForm(request.POST)
 			if form.is_valid():
 				# process form data
+				name = form.cleaned_data['name']
 				version = form.cleaned_data['version']
 				chromosome = form.cleaned_data['chromosome']
 				position = form.cleaned_data['position']
-				insert_name = form.cleaned_data['insert_name']
 				allele_type = form.cleaned_data['allele_type']
 			
 				newgenome = {}
-				newgenome = GeneticElement(version=version, chromosome=chromosome, position=position, insert_name=insert_name, allele_type=allele_type)
+				newgenome = GeneticElement(name=name, version=version, chromosome=chromosome, position=position, allele_type=allele_type)
 				newgenome.save()
 				create_HistoryItem('Add Genome', sm, False, '', True, [newgenome.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
@@ -509,10 +513,10 @@ def editGenome(request):
 					pk = form.cleaned_data['pk']
 					new = GeneticElement.objects.filter(pk=pk).get()
 					
+					new.name = form.cleaned_data['name']
 					new.version = form.cleaned_data['version']
 					new.chromosome = form.cleaned_data['chromosome']
 					new.position = form.cleaned_data['position']
-					new.insert_name = form.cleaned_data['insert_name']
 					new.allele_type = form.cleaned_data['allele_type']
 					new.save()
 					create_HistoryItem('Edit Genome', sm, False, '', True, [new.id])
@@ -520,7 +524,7 @@ def editGenome(request):
 			else:
 				# bringing up the edit page
 				to_edit = GeneticElement.objects.filter(pk=selection).get()
-				initial = {'pk': to_edit.pk,'version': to_edit.version, 'chromosome': to_edit.chromosome,'position': to_edit.position,'insert_name': to_edit.insert_name, 'allele_type': to_edit.allele_type}
+				initial = {'pk': to_edit.pk,'name': to_edit.name, 'version': to_edit.version, 'chromosome': to_edit.chromosome,'position': to_edit.position, 'allele_type': to_edit.allele_type}
 				form = AddGenomeForm(initial=initial)
 		else:
 			# choosing what object to edit
@@ -813,14 +817,20 @@ def addAlleleType(request):
 			if form.is_valid():
 				# process form data
 				type = form.cleaned_data['type']
-				if (type == 'insertion' or type == 'deletion'):
+				description = form.cleaned_data['description']
+				if (type == 'deletion'):
 					size = form.cleaned_data['size']
+					orientation = form.cleaned_data['orientation']
 				else:
-					size = 0
-				orientation = form.cleaned_data['orientation']
+					size = None
+					orientation = None
+				if (type == 'insertion'):
+					insert_name = form.cleaned_data['insert_name']
+				else:
+					insert_name = None
 			
 				newallalle = {}
-				newallalle = Allele_type(type=type, size=size, orientation=orientation)
+				newallalle = Allele_type(description=description, type=type, size=size, orientation=orientation, insert_name=insert_name)
 				newallalle.save()
 				create_HistoryItem('Add Allele Type', sm, False, '', True, [newallalle.id])
 				return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
@@ -848,6 +858,7 @@ def editAlleleType(request):
 					pk = form.cleaned_data['pk']
 					new = Allele_type.objects.filter(pk=pk).get()
 					
+					new.description = form.cleaned_data['description']
 					new.type = form.cleaned_data['type']
 					if (new.type == 'insertion' or new.type == 'deletion'):
 						new.size = form.cleaned_data['size']
@@ -860,7 +871,7 @@ def editAlleleType(request):
 			else:
 				# bringing up the edit page
 				to_edit = Allele_type.objects.filter(pk=selection).get()
-				initial = {'pk': to_edit.pk,'type': to_edit.type,'size': to_edit.size,'orientation': to_edit.orientation}
+				initial = {'pk': to_edit.pk, 'description': to_edit.description,'type': to_edit.type,'size': to_edit.size,'orientation': to_edit.orientation,'insert_name': to_edit.insert_name}
 				form = AddAlleleTypeForm(initial=initial)
 		else:
 			# choosing what object to edit
@@ -1210,7 +1221,10 @@ def addBarcodes(request):
 		dict['actions'] = get_user_allowed_actions(sm)
 		if request.method == 'POST':
 			quantity = int(request.POST.get('quantity'))
-			lastUsed = int(Barcode.objects.all().aggregate(Max('id'))['id__max'])
+			try:
+				lastUsed = int(Barcode.objects.all().aggregate(Max('id'))['id__max'])
+			except:
+				lastUsed = 0
 			for x in range(1,quantity+1):
 				newBarcode = {}
 				newBarcode = Barcode(id=lastUsed+x, used=False)
@@ -1222,9 +1236,23 @@ def addBarcodes(request):
 		else:
 			# choosing what object to edit
 			form = PrintBarcodeForm()
+			barcodes = Barcode.objects.filter(used__exact=False).all()
+			available = []
+			for x in barcodes:
+				available.append(x.id)
+			available.sort
+			dict['available'] = available
+			if available.count > 0:
+				dict['number'] = len(available)
+				dict['minimum'] = available[0]
+				dict['maximum'] = available[len(available)-1]
+			else:
+				dict['number'] = 0
+				dict['minimum'] = 0
+				dict['maximum'] = 0
 			dict['form'] = form
 			dict['action_slug'] = "addbarcodes"
-			return render_to_response('form.html', dict, context_instance=RequestContext(request))
+			return render_to_response('barcodeform.html', dict, context_instance=RequestContext(request))
 
 def addMating(request):
 	if not request.user.is_authenticated():
@@ -1635,6 +1663,69 @@ def euthanizeLine(request, id):
 		dict['form'] = form
 		dict['action_slug'] = "euthanizeline/"+ str(id)
 		return render_to_response('form.html', dict, context_instance=RequestContext(request))
+
+def returnLineCSV(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+	response = HttpResponse(mimetype='text/csv')
+	response['Content-Disposition'] = 'attachment; filename=All_Lines.csv'
+	allFish = Line.objects.all()
+	writer = csv.writer(response)
+	writer.writerow(['Name', 'Barcode', 'LineID', 'Current Quantity', 'Original Quantity', 'Parent', 'Container', 'Location', 'Strain', 'Gender', 'Active', 'Birthdate', 'Owner'])
+	for fish in allFish:
+		if (fish.parent == None):
+			writer.writerow([fish.name, fish.barcode, fish.IACUC_ID, fish.current_quantity, fish.original_quantity, ' ', fish.container, fish.location, fish.strain, fish.sex, fish.active, fish.birthdate, fish.owner])
+		else:
+			writer.writerow([fish.name, fish.barcode, fish.IACUC_ID, fish.current_quantity, fish.original_quantity, fish.parent, fish.container, fish.location, fish.strain, fish.sex, fish.active, fish.birthdate, fish.owner])
+	return response
+
+def returnProductCSV(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+	response = HttpResponse(mimetype='text/csv')
+	response['Content-Disposition'] = 'attachment; filename=All_Products.csv'
+	allProducts = Product.objects.all()
+	writer = csv.writer(response)
+	writer.writerow(['Name', 'Barcode', 'Parent 1', 'Parent 2', 'Type', 'Container', 'Active', 'Owner'])
+	for product in allProducts:
+		parent1 = product.line_id.barcode if product.line_id is not None else ''
+		parent2 = product.line2_id.barcode if product.line2_id is not None else ''
+		writer.writerow([product.name, product.barcode, parent1, parent2, product.type, product.container, product.active, product.owner])
+	return response
+
+def returnAlleleCSV(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+	response = HttpResponse(mimetype='text/csv')
+	response['Content-Disposition'] = 'attachment; filename=All_Products.csv'
+	allAllele = GeneticElement.objects.all()
+	writer = csv.writer(response)
+	writer.writerow(['Name', 'Version', 'Chromosome', 'Position', 'Description', 'Type', 'Size', 'Orientation', 'Insert Name', 'RefNumber'])
+	for allele in allAllele:
+		Description = allele.allele_type.description
+		Type = allele.allele_type.type
+		Size = allele.allele_type.size if allele.allele_type.size is not None else ''
+		Orientation = allele.allele_type.orientation if allele.allele_type.orientation is not None else ''
+		InsertName = allele.allele_type.insert_name.name if allele.allele_type.insert_name is not None else ''
+		RefNumber = allele.allele_type.insert_name.ref_number if (allele.allele_type.insert_name is not None and allele.allele_type.insert_name.ref_number is not None) else ''
+		writer.writerow([allele.name, allele.version, allele.chromosome, allele.position, Description, Type, Size, Orientation, InsertName, RefNumber])
+	return response
+
+def returnAssociationsCSV(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+	response = HttpResponse(mimetype='text/csv')
+	response['Content-Disposition'] = 'attachment; filename=All_Lines.csv'
+	allFish = Line.objects.all()
+	writer = csv.writer(response)
+	writer.writerow(['Line Barcode','Allele Name', 'Version', 'Chromosome', 'Position', 'Description', 'Allele Type', 'Size', 'Orientation', 'Insert Name', 'RefNumber'])
+	for fish in allFish:
+		associatedGenomes = fish.genomes.all()
+		for allele in associatedGenomes:
+			Description = allele.allele_type.description
+		Type = allele.allele_type.type
+		Size = allele.allele_type.size if allele.allele_type.size is not None else ''
+		Orientation = allele.allele_type.orientation if allele.allele_type.orientation is not None else ''
+		InsertName = allele.allele_type.insert_name.name if allele.allele_type.insert_name is not None else ''
+		RefNumber = allele.allele_type.insert_name.ref_number if (allele.allele_type.insert_name is not None and allele.allele_type.insert_name.ref_number is not None) else ''
+		writer.writerow([fish.barcode, allele.name, allele.version, allele.chromosome, allele.position, Description, Type, Size, Orientation, InsertName, RefNumber])
+	return response
 
 ##############
 #####

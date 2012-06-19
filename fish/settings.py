@@ -12,26 +12,26 @@ ADMINS = (
 MANAGERS = ADMINS
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'postgresql_psycopg2',
-        'NAME': 'xqgvzvjwid',
-        'USER': 'xqgvzvjwid',
-        'PASSWORD': 'q4gnfw6bchCUI5_y8CGj',
-        'HOST': 'ec2-174-129-20-245.compute-1.amazonaws.com',
-        'PORT': '',  # leave blank
-    }
+   'default': {
+       'ENGINE': 'postgresql_psycopg2',
+       'NAME': 'xqgvzvjwid',
+       'USER': 'xqgvzvjwid',
+       'PASSWORD': 'q4gnfw6bchCUI5_y8CGj',
+       'HOST': 'ec2-174-129-20-245.compute-1.amazonaws.com',
+       'PORT': '',  # leave blank
+   }
 }
 
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': 'fish.db',
-#        'USER': '',
-#        'PASSWORD': '',
-#        'HOST': '',
-#        'PORT': '',  # leave blank
-#    }
-#}
+# DATABASES = {
+    # 'default': {
+        # 'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': 'fish.db',
+        # 'USER': '',
+        # 'PASSWORD': '',
+        # 'HOST': '',
+        # 'PORT': '',  # leave blank
+    # }
+# }
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name

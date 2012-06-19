@@ -70,6 +70,11 @@ urlpatterns = patterns('',
 
 	url(r'^action/splitline/(?P<id>\w+)/$', splitLineInitial, name="splitline"),
 	url(r'^action/splitline/$', splitLine, name="splitline"),
+
+	url(r'^lineCSV$',  returnLineCSV, name="returnlinecsv"),
+	url(r'^productCSV$',  returnProductCSV, name="returnproductcsv"),
+	url(r'^alleleCSV$',  returnAlleleCSV, name="returnallelecsv"),
+	url(r'^associationsCSV$',  returnAssociationsCSV, name="returnassociationscsv"),
 	
 	
 	# Activation keys get matched by w+ instead of the more specific

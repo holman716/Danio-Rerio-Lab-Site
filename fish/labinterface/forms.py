@@ -43,7 +43,7 @@ class AddProductForm(forms.Form):
 	barcode = forms.IntegerField()
 	name = forms.CharField()
 	line = forms.IntegerField()
-	line2 = forms.IntegerField()
+	line2 = forms.IntegerField(required=False)
 	type = forms.ModelChoiceField(queryset=ProductType.objects.all(), empty_label=None)
 	container = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label=None)
 	active = forms.BooleanField(required=False, initial=True)
@@ -52,10 +52,10 @@ class AddProductForm(forms.Form):
 
 class AddGenomeForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
+	name = forms.CharField()
 	version = forms.ModelChoiceField(queryset=Genome_version.objects.all())
 	chromosome = forms.CharField()
 	position = forms.IntegerField()
-	insert_name = forms.ModelChoiceField(queryset=Insert_name.objects.all())
 	allele_type = forms.ModelChoiceField(queryset=Allele_type.objects.all())
 
 class SelectGenomeForm(forms.Form):
@@ -80,7 +80,7 @@ class AddContainerForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
 	description = forms.CharField()
 	type = forms.ModelChoiceField(queryset=Container_types.objects.all(), empty_label=None)
-	container = forms.ModelChoiceField(queryset=Container.objects.all(), empty_label="-----", required=False)
+	container = forms.ModelChoiceField(label='Contained in', queryset=Container.objects.all(), empty_label="-----", required=False)
 
 class SelectContainerForm(forms.Form):
 	selection = forms.ModelChoiceField(queryset=Container.objects.all(), empty_label=None)
@@ -94,9 +94,26 @@ class SelectContainerTypeForm(forms.Form):
 
 class AddAlleleTypeForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
+	description = forms.CharField()
 	type = forms.ChoiceField(choices=Allele_type.TYPE_CHOICES)
-	size = forms.IntegerField()
-	orientation = forms.ChoiceField(choices=Allele_type.ORIENTATION_CHOICES)
+	size = forms.IntegerField(required=False)
+	orientation = forms.ChoiceField(choices=Allele_type.ORIENTATION_CHOICES, required=False)
+	insert_name = forms.ModelChoiceField(queryset=Insert_name.objects.all(), empty_label='---', required=False)
+	
+	def clean(self):
+		cleaned_data = super(AddAlleleTypeForm, self).clean()
+		type = cleaned_data.get("type")
+		size = cleaned_data.get("size")
+		orientation = cleaned_data.get("orientation")
+		insert_name = cleaned_data.get("insert_name")
+
+		if (type == 'insertion' and insert_name == None):
+			self._errors["insert_name"] = self.error_class(['Insert type requires an insert name'])
+		if (type == 'deletion' and size == None):
+			self._errors["size"] = self.error_class(['Deletion type requires a size'])
+		if (type == 'deletion' and orientation == 'None'):
+			self._errors["orientation"] = self.error_class(['Deletion type requires an orientation'])
+		return cleaned_data
 
 class SelectAlleleTypeForm(forms.Form):
 	selection = forms.ModelChoiceField(queryset=Allele_type.objects.all(), empty_label=None)
