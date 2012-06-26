@@ -10,6 +10,7 @@ class AddLineForm(forms.Form):
 	name = forms.CharField()
 	IACUC_ID = forms.CharField(label='Line Number')
 	parent = forms.ModelChoiceField(queryset=Line.objects.all(), empty_label="(No Parent)", required=False)
+	parent2 = forms.ModelChoiceField(queryset=Line.objects.all(), empty_label="(No Parent)", required=False)
 	raised = forms.BooleanField(required=False)
 	current_quantity = forms.IntegerField()
 	original_quantity = forms.IntegerField()
@@ -23,6 +24,7 @@ class AddLineForm(forms.Form):
 
 class EnterBarcodeForm(forms.Form):
 	step = forms.CharField(widget=forms.HiddenInput(), required=False)
+	info = forms.CharField(widget=forms.HiddenInput(), required=False)
 	selection = forms.IntegerField(label='Selected Barcode',help_text="Please enter barcode")
 
 class ConfirmActionForm(forms.Form):
@@ -50,16 +52,17 @@ class AddProductForm(forms.Form):
 	owner = forms.ModelChoiceField(queryset=StaffMember.objects.all(), empty_label=None)
 
 
-class AddGenomeForm(forms.Form):
+class AddAlleleForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
-	name = forms.CharField()
+	name = forms.CharField(label='Allele Name')
 	version = forms.ModelChoiceField(queryset=Genome_version.objects.all())
 	chromosome = forms.CharField()
 	position = forms.IntegerField()
 	allele_type = forms.ModelChoiceField(queryset=Allele_type.objects.all())
+	orientation = forms.ChoiceField(choices=Allele.ORIENTATION_CHOICES, required=False)
 
-class SelectGenomeForm(forms.Form):
-	selection = forms.ModelChoiceField(queryset=GeneticElement.objects.all(), empty_label=None)
+class SelectAlleleForm(forms.Form):
+	selection = forms.ModelChoiceField(queryset=Allele.objects.all(), empty_label=None)
 
 class AddGenomeVersionForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
@@ -97,22 +100,18 @@ class AddAlleleTypeForm(forms.Form):
 	description = forms.CharField()
 	type = forms.ChoiceField(choices=Allele_type.TYPE_CHOICES)
 	size = forms.IntegerField(required=False)
-	orientation = forms.ChoiceField(choices=Allele_type.ORIENTATION_CHOICES, required=False)
 	insert_name = forms.ModelChoiceField(queryset=Insert_name.objects.all(), empty_label='---', required=False)
 	
 	def clean(self):
 		cleaned_data = super(AddAlleleTypeForm, self).clean()
 		type = cleaned_data.get("type")
 		size = cleaned_data.get("size")
-		orientation = cleaned_data.get("orientation")
 		insert_name = cleaned_data.get("insert_name")
 
 		if (type == 'insertion' and insert_name == None):
 			self._errors["insert_name"] = self.error_class(['Insert type requires an insert name'])
-		if (type == 'deletion' and size == None):
-			self._errors["size"] = self.error_class(['Deletion type requires a size'])
-		if (type == 'deletion' and orientation == 'None'):
-			self._errors["orientation"] = self.error_class(['Deletion type requires an orientation'])
+		if ((type == 'deletion' or type == 'insertion') and size == None):
+			self._errors["size"] = self.error_class(['Selected type requires a size'])
 		return cleaned_data
 
 class SelectAlleleTypeForm(forms.Form):
@@ -130,7 +129,7 @@ class SelectInsertNameForm(forms.Form):
 
 class AddGenomeAssociationForm(forms.Form):
 	line = forms.ModelChoiceField(queryset=Line.objects.all(), empty_label=None)
-	genome = forms.ModelChoiceField(queryset=GeneticElement.objects.all(), empty_label=None)
+	genome = forms.ModelChoiceField(queryset=Allele.objects.all(), empty_label=None)
 
 class SplitLineInitialForm(forms.Form):
 	choices = (('S','Singles'),('G','Groups'))
@@ -177,11 +176,16 @@ class SplitLineFinalForm(forms.Form):
 class ProcessMatingForm(forms.Form):
 	productId = forms.CharField(widget=forms.HiddenInput(), required=False)
 
-class ConfirmLineForm(forms.Form):
+class TakeDownMatingForm(forms.Form):
+	ProceedOptions = (
+		('Line', 'Line'),
+		('Product', 'Product'),
+		('Trash', 'Trash')
+	)
 	step = forms.CharField(widget=forms.HiddenInput(), required=False)
 	line1 = forms.CharField(help_text="Scan the first barcode (or male if out-cross)")
 	line2 = forms.CharField(required=False, help_text="If this is an out-cross scan the female line")
-	barcode = forms.BooleanField(required=False, help_text="Will the mating result receive a barcode?")
+	action = forms.ChoiceField(choices=ProceedOptions, help_text="What will the result become")
 
 class EditUserForm(forms.Form):
 	user = forms.CharField(label="Username")

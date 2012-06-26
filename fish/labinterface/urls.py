@@ -41,11 +41,11 @@ urlpatterns = patterns('',
 	url(r'^action/addproduct/$', addProduct, name="addproduct"),
 	url(r'^action/editproduct/$', editProduct, name="editproduct"),
 
-	url(r'^action/addgenome/$', addGenome, name="addgenome"),
-	url(r'^action/editgenome/$', editGenome, name="editgenome"),
+	url(r'^action/addallele/$', addAllele, name="addallele"),
+	url(r'^action/editallele/$', editAllele, name="editallele"),
 	url(r'^action/viewgenome/(?P<id>\w+)/$', viewGenome, name="viewgenome"),
 
-	url(r'^action/addgenomeassociation/$', addGenomeAssociation, name="addgenomeassociation"),
+	url(r'^action/associateallele/$', associateAllele, name="associateallele"),
 	url(r'^action/removegenomeassociation/(?P<line>\w+)&(?P<genome>\w+)/$', removeGenomeAssociation, name="removegenomeassociation"),
 
 	url(r'^action/addgenomeversion/$', addGenomeVersion, name="addgenomeversion"),
@@ -66,7 +66,7 @@ urlpatterns = patterns('',
 
 	url(r'^action/addbarcodes/$', addBarcodes, name="addbarcodes"),
 
-	url(r'^action/addmating/$', addMating, name="addbarcodes"),
+	url(r'^action/addmating/$', addMating, name="addmating"),
 
 	url(r'^action/splitline/(?P<id>\w+)/$', splitLineInitial, name="splitline"),
 	url(r'^action/splitline/$', splitLine, name="splitline"),

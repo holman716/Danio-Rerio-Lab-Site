@@ -6,6 +6,7 @@
 <p>{{ qr_code }}</p>
 <p>IACUC_ID: {{ iacuc_id }} </p>
 <p>Parent: {% if parent != "None" %}<a href="/action/viewline/{{ parent.barcode }}/">{{ parent }} </a>{% else %} {{ parent }} {% endif %}</p>
+<p>Parent2: {% if parent2 != "None" %}<a href="/action/viewline/{{ parent2.barcode }}/">{{ parent2 }} </a>{% else %} {{ parent2 }} {% endif %}</p>
 <p>Raised: {{ raised }} </p>
 <p>Original Quantity: {{ original_quantity }} </p>
 <p>Current Quantity: {{ current_quantity }} </p>

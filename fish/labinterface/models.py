@@ -101,7 +101,8 @@ class Line(models.Model):
 	barcode = models.IntegerField(db_index=True, unique=True)
 	name = models.CharField(max_length=256)
 	IACUC_ID = models.CharField(max_length=256, blank=True)
-	parent = models.ForeignKey('Line', null=True, blank=True)
+	parent = models.ForeignKey('Line', null=True, blank=True, related_name='LineParent1')
+	parent2 = models.ForeignKey('Line', null=True, blank=True, related_name='LineParent2')
 	raised = models.BooleanField(default=False)
 	current_quantity = models.IntegerField()
 	original_quantity = models.IntegerField()
@@ -119,7 +120,7 @@ class Line(models.Model):
 	active = models.BooleanField()
 	birthdate = models.DateField(null=True)
 	owner = models.ForeignKey('StaffMember')
-	genomes = models.ManyToManyField('GeneticElement', null=True)
+	genomes = models.ManyToManyField('Allele', null=True)
 	
 	class Meta:
 		pass
@@ -175,13 +176,19 @@ class Product(models.Model):
 	def __unicode__(self):
 		return self.name
 		
-class GeneticElement(models.Model):
+class Allele(models.Model):
 	id = models.AutoField(primary_key=True)
 	name = models.CharField(max_length=200)
 	version = models.ForeignKey('Genome_version')
 	chromosome = models.CharField(max_length=128)
 	position = models.BigIntegerField(null=True)
 	allele_type = models.ForeignKey('Allele_type')
+	ORIENTATION_CHOICES = (
+		('None', 'None'),
+		('+', '+'),
+		('-', '-')
+	)
+	orientation = models.CharField(max_length=1, choices=ORIENTATION_CHOICES, default='+', null=True)
 
 	def __unicode__(self):
 		return self.name
@@ -216,12 +223,6 @@ class Allele_type(models.Model):
 	)
 	type = models.CharField(max_length=128)
 	size = models.IntegerField(null=True)
-	ORIENTATION_CHOICES = (
-		('None', 'None'),
-		('+', '+'),
-		('-', '-')
-	)
-	orientation = models.CharField(max_length=1, choices=ORIENTATION_CHOICES, default='+', null=True)
 	insert_name = models.ForeignKey('Insert_name', null=True)
 
 	def __unicode__(self):
