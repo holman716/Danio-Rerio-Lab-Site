@@ -206,7 +206,7 @@ def mergeLines(request):
 					continuing = form.cleaned_data['add_another']
 					soFar = form.cleaned_data['soFar']
 					nextBarcode = form.cleaned_data['next_Barcode']
-					if (continuing and not (nextBarcode is None or nextBarcode == '')):
+					if (nextBarcode != None):
 						try:
 							nextLine = Line.objects.filter(barcode__exact=nextBarcode).get()
 							if (nextLine != None):
@@ -232,19 +232,17 @@ def mergeLines(request):
 						form = MergeLineForm(initial=initial)
 					else:
 						# bringing up the edit page
+						dict['definesHeader'] = True
+						dict['header'] = "Merging: " + soFar + ". Please confirm traits of the merged line."
 						allLines = soFar.split(',')
 						firstLine = allLines[0]
-						allLines.remove(firstLine)
 						to_edit = Line.objects.filter(barcode__exact=firstLine).get()
-						initial = {'step': 'Editing', 'name': to_edit.name, 'pk': to_edit.pk, 'barcode': to_edit.barcode,'IACUC_ID': to_edit.IACUC_ID, 'raised': to_edit.raised,'current_quantity': to_edit.current_quantity,'original_quantity': to_edit.original_quantity, 'container': to_edit.container, 'sex': to_edit.sex, 'active': to_edit.active, 'strain': to_edit.strain, 'location': to_edit.location, 'birthdate': to_edit.birthdate, 'owner': to_edit.owner, 'notes' : to_edit.notes}
+						initial = {'step': 'Editing', 'extraInfo' : soFar, 'name': to_edit.name, 'pk': to_edit.pk, 'barcode': to_edit.barcode,'IACUC_ID': to_edit.IACUC_ID, 'raised': to_edit.raised,'current_quantity': to_edit.current_quantity,'original_quantity': to_edit.original_quantity, 'container': to_edit.container, 'sex': to_edit.sex, 'active': to_edit.active, 'strain': to_edit.strain, 'location': to_edit.location, 'birthdate': to_edit.birthdate, 'owner': to_edit.owner, 'notes' : to_edit.notes}
 						if not to_edit.parent == None:
 							initial['parent'] = to_edit.parent.pk
 						if not to_edit.parent2 == None:
 							initial['parent2'] = to_edit.parent2.pk
 						form = AddLineForm(initial=initial)
-						for x in allLines:
-							to_delete = Line.objects.filter(barcode__exact=x).get()
-							to_delete.delete()
 			elif step == 'Editing':
 				# submitting the modification
 				form = AddLineForm(request.POST)
@@ -253,6 +251,7 @@ def mergeLines(request):
 					pk = form.cleaned_data['pk']
 					new = Line.objects.filter(pk=pk).get()
 					barcode = form.cleaned_data['barcode']
+					extraInfo = form.cleaned_data['extraInfo']
 					try:
 						try:
 							barcodeFound = Barcode.objects.filter(pk=barcode).get()
@@ -291,6 +290,12 @@ def mergeLines(request):
 					new.owner = form.cleaned_data['owner']
 					new.notes = form.cleaned_data['notes']
 					new.save()
+					allLines = extraInfo.split(',')
+					firstLine = allLines[0]
+					allLines.remove(firstLine)
+					for x in allLines:
+							to_delete = Line.objects.filter(barcode__exact=x).get()
+							to_delete.delete()
 					create_HistoryItem('Merged Lines', sm, False, '', True, [new.id])
 					return render_to_response('success.html', dict, context_instance=RequestContext(request)) # redirect after successful POST
 		else:

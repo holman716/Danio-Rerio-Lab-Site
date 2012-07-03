@@ -7,6 +7,7 @@ from registration.models import RegistrationProfile
 class AddLineForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
 	step = forms.CharField(widget=forms.HiddenInput(), required=False)
+	extraInfo = forms.CharField(widget=forms.HiddenInput(), required=False)
 	barcode = forms.IntegerField()
 	name = forms.CharField()
 	IACUC_ID = forms.CharField(label='Line Number')
