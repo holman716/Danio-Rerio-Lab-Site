@@ -28,6 +28,7 @@ urlpatterns = patterns('',
 	
 	url(r'^action/addline/$', addLine, name="addline"),
 	url(r'^action/editline/$', editLine, name="editline"),
+	url(r'^action/mergelines/$', mergeLines, name="mergelines"),
 	url(r'^action/editline/(?P<id>\w+)/$', editLineByBarcode, name="editline"),
 	url(r'^action/euthanizeline/(?P<id>\w+)/$', euthanizeLine, name="editline"),
 	url(r'^action/viewitem/$', viewItemRedirect, name="viewitem"),

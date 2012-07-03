@@ -25,6 +25,7 @@
 		<td><b>Location</b></td>
 		<td><b>Strain</b></td>
 		<td><b>Sex</b></td>
+		<td><b>Notes</b></td>
 		<td><b>Actions</b></td>
 	</tr>
 {% for o in active_fish %}
@@ -35,6 +36,7 @@
 		<td>{{ o.location }}</td>
 		<td>{{ o.strain }}</td>
 		<td>{{ o.sex }}</td>
+		<td>{{ o.notes }}</td>
 		{% if activeOnly or o.active %}
 		<td>
 			<a href="/action/editline/{{o.barcode}}"><img src="{{ STATIC_URL }}images/editButton.png"></a>

@@ -6,6 +6,7 @@ from registration.models import RegistrationProfile
 
 class AddLineForm(forms.Form):
 	pk = forms.CharField(widget=forms.HiddenInput(), required=False)
+	step = forms.CharField(widget=forms.HiddenInput(), required=False)
 	barcode = forms.IntegerField()
 	name = forms.CharField()
 	IACUC_ID = forms.CharField(label='Line Number')
@@ -19,7 +20,8 @@ class AddLineForm(forms.Form):
 	sex = forms.ChoiceField(choices=Line.SEX_CHOICES)
 	strain = forms.CharField(required=False)
 	active = forms.BooleanField(required=False, initial=True)
-	owner = forms.ModelChoiceField(queryset=StaffMember.objects.all(), )
+	notes = forms.CharField(required=False)
+	owner = forms.ModelChoiceField(queryset=StaffMember.objects.all())
 	birthdate = forms.DateField(required=False)
 
 class EnterBarcodeForm(forms.Form):
@@ -191,8 +193,11 @@ class EditUserForm(forms.Form):
 	user = forms.CharField(label="Username")
 	first = forms.CharField(label="First Name")
 	last = forms.CharField(label="Last Name")
-	position = forms.CharField(label="Last Name")
+	position = forms.CharField(label="Position")
 	lab_group = forms.ModelChoiceField(queryset=LabGroup.objects.all(), label="Lab Group")
+	IACUC = forms.ModelChoiceField(queryset=IACUC_ids.objects.all(), empty_label="(None)", required=False)
+	newIACUC = forms.CharField(label="New IACUC", required=False, help_text="If IACUC ID is not listed manually enter ID here")
+
 
 class MyRegistrationForm(RegistrationForm):
 	attrs_dict = { 'class': 'required' }
@@ -201,3 +206,9 @@ class MyRegistrationForm(RegistrationForm):
 	first_name = forms.CharField(widget=forms.TextInput(attrs=attrs_dict))
 	last_name = forms.CharField(widget=forms.TextInput(attrs=attrs_dict))
 	position = forms.CharField(widget=forms.TextInput(attrs=attrs_dict))
+
+class MergeLineForm(forms.Form):
+	step = forms.CharField(widget=forms.HiddenInput(), required=False)
+	soFar = forms.CharField(widget=forms.HiddenInput(), required=False)
+	next_Barcode = forms.IntegerField(required=False, help_text="Add fish to merge list")
+	add_another = forms.BooleanField(required=False, help_text="Are there more fish after this to merge?", initial=True)

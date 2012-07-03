@@ -117,6 +117,7 @@ class Line(models.Model):
 		('N', 'None'),
 	)
 	sex = models.CharField(max_length=1, choices=SEX_CHOICES, default='U')
+	notes = models.TextField()
 	active = models.BooleanField()
 	birthdate = models.DateField(null=True)
 	owner = models.ForeignKey('StaffMember')
